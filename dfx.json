@@ -1,0 +1,35 @@
+{
+  "canisters": {
+    "transactions": {
+      "main": "src/transactions/main.mo",
+      "type": "motoko"
+    },
+    "users": {
+      "main": "src/users/main.mo",
+      "type": "motoko"
+    },
+    "blockchains": {
+      "main": "src/blockchains/main.mo",
+      "type": "motoko"
+    },
+    "tokens": {
+      "main": "src/tokens/main.mo",
+      "type": "motoko"
+    },
+    "last_processed_blocks": {
+      "main": "src/last_processed_blocks/main.mo",
+      "type": "motoko"
+    },
+    "nfts": {
+      "main": "src/nfts/main.mo",
+      "type": "motoko"
+    }
+  },
+  "defaults": {
+    "build": {
+      "packtool": "mops sources",
+      "args": ""
+    }
+  },
+  "version": 1
+}
