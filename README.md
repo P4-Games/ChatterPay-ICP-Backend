@@ -1,59 +1,170 @@
-# `my_canister_project`
+# ChatterPay ICP Backend
 
-Welcome to your new `my_canister_project` project and to the Internet Computer development community. By default, creating a new project adds this README and some template files to your project directory. You can edit these template files to customize your project and to include your own code to speed up the development cycle.
+![](https://img.shields.io/badge/Motoko-informational?style=flat&logo=dfinity&logoColor=white&color=6aa6f8)
+![](https://img.shields.io/badge/Internet_Computer-informational?style=flat&logo=dfinity&logoColor=white&color=6aa6f8)
+![](https://img.shields.io/badge/DFX-informational?style=flat&logo=dfinity&logoColor=white&color=6aa6f8)
+![](https://img.shields.io/badge/Candid-informational?style=flat&logo=dfinity&logoColor=white&color=6aa6f8)
 
-To get started, you might want to explore the project directory structure and the default configuration file. Working with this project in your development environment will not affect any production deployment or identity tokens.
+ChatterPay is a Wallet for WhatsApp that integrates AI and Account Abstraction, enabling any user to use blockchain easily and securely without technical knowledge. This repository contains the Internet Computer backend implementation using Motoko.
 
-To learn more before you start working with `my_canister_project`, see the following documentation available online:
+## Sponsored by:
+![ICP Argentina](https://github.com/user-attachments/assets/65fe11f9-da59-4b4e-8f2e-4b50555a412a)
 
-- [Quick Start](https://internetcomputer.org/docs/current/developer-docs/setup/deploy-locally)
-- [SDK Developer Tools](https://internetcomputer.org/docs/current/developer-docs/setup/install)
-- [Motoko Programming Language Guide](https://internetcomputer.org/docs/current/motoko/main/motoko)
-- [Motoko Language Quick Reference](https://internetcomputer.org/docs/current/motoko/main/language-manual)
+**Components**:
 
-If you want to start working on your project right away, you might want to try the following commands:
+- Landing Page ([product](https://chatterpay.net), [source code](https://github.com/P4-Games/ChatterPay))
+- User Dashboard Website ([product](https://chatterpay.net/dashboard), [source code](https://github.com/P4-Games/ChatterPay))
+- Backend API (this Repo)
+- Smart Contracts ([source code](https://github.com/P4-Games/ChatterPay-SmartContracts))
+- Data Indexing (Subgraph) ([source code](https://github.com/P4-Games/ChatterPay-Subgraph))
+- Bot AI Admin Dashboard Website ([product](https://app.chatizalo.com/))
+- Bot AI (Chatizalo) ([product](https://chatizalo.com/))
+
+# About this Repo
+
+This repository contains the Internet Computer backend implementation using Motoko, providing a decentralized backend infrastructure for ChatterPay.
+
+**Built With**:
+
+- Platform: [Internet Computer](https://internetcomputer.org/)
+- Language: [Motoko](https://internetcomputer.org/docs/current/motoko/main/motoko)
+- Development Framework: [DFX](https://internetcomputer.org/docs/current/developer-docs/build/install-upgrade-remove)
+- Interface Description: [Candid](https://internetcomputer.org/docs/current/developer-docs/build/candid/candid-intro)
+
+# Getting Started
+
+**1. Install Requirements**:
+
+- [DFX](https://internetcomputer.org/docs/current/developer-docs/build/install-upgrade-remove)
+- [Node.js](https://nodejs.org/) (for development tools)
+- [Git](https://git-scm.com/)
+
+**2. Clone repository**:
 
 ```bash
-cd my_canister_project/
-dfx help
-dfx canister --help
+git clone https://github.com/P4-Games/ChatterPay-ICP-Backend
+cd ChatterPay-ICP-Backend
 ```
 
-## Running the project locally
-
-If you want to test your project locally, you can use the following commands:
+**3. Install DFX**:
 
 ```bash
-# Starts the replica, running in the background
-dfx start --background
+sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+```
 
-# Deploys your canisters to the replica and generates your candid interface
+**4. Start Local Network**:
+
+```bash
+dfx start --background
+```
+
+**5. Deploy Canisters**:
+
+```bash
 dfx deploy
 ```
 
-Once the job completes, your application will be available at `http://localhost:4943?canisterId={asset_canister_id}`.
+The backend will be available at the provided canister URLs.
 
-If you have made changes to your backend canister, you can generate a new candid interface with
+# Project Structure
 
+- `src/`:
+  - `types.mo`: Shared type definitions
+  - `transactions/`: Transaction management canister
+  - `users/`: User management canister
+  - `blockchains/`: Blockchain configuration canister
+  - `tokens/`: Token management canister
+  - `nfts/`: NFT management canister
+  - `last_processed_blocks/`: Block processing tracking canister
+- `dfx.json`: Project configuration file
+- `.gitignore`: Git ignore configuration
+- `README.md`: This file
+
+# Canisters Overview
+
+The backend is composed of several specialized canisters:
+
+1. **TransactionStorage**:
+   - Manages transaction records
+   - Tracks transaction status and history
+   - Provides transaction querying capabilities
+
+2. **UserStorage**:
+   - Handles user profiles and authentication
+   - Manages wallet associations
+   - Phone number to wallet mapping
+
+3. **BlockchainStorage**:
+   - Stores blockchain configurations
+   - Manages smart contract addresses
+   - Handles network-specific settings
+
+4. **TokenStorage**:
+   - Manages token information
+   - Tracks token metadata
+   - Chain-specific token configurations
+
+5. **NFTStorage**:
+   - Handles NFT minting and management
+   - Stores NFT metadata
+   - Manages NFT ownership and transfers
+
+6. **LastProcessedBlockStorage**:
+   - Tracks blockchain synchronization
+   - Manages processing checkpoints
+   - Network-specific block tracking
+
+# API Documentation
+
+Each canister exposes its API through Candid interfaces. Here are the main endpoints for each canister:
+
+## Transactions
+- `addTransaction`: Create a new transaction record
+- `getTransaction`: Retrieve transaction by ID
+- `getTransactionsByWallet`: Get transactions for a specific wallet
+- `getAllTransactions`: List all transactions
+
+## Users
+- `createUser`: Register a new user
+- `getUser`: Retrieve user information
+- `getWalletByPhoneNumber`: Get wallet address by phone number
+- `updateUser`: Update user information
+
+## NFTs
+- `createNFT`: Mint a new NFT
+- `getNFT`: Retrieve NFT information
+- `getNFTsByWallet`: Get NFTs owned by a wallet
+- `updateNFTMetadata`: Update NFT metadata
+
+For complete API documentation, deploy the canisters and visit the Candid interface.
+
+# Development
+
+To start development:
+
+1. Start local network:
 ```bash
-npm run generate
+dfx start --background
 ```
 
-at any time. This is recommended before starting the frontend development server, and will be run automatically any time you run `dfx deploy`.
-
-If you are making frontend changes, you can start a development server with
-
+2. Deploy canisters:
 ```bash
-npm start
+dfx deploy
 ```
 
-Which will start a server at `http://localhost:8080`, proxying API requests to the replica at port 4943.
+3. Test the API:
+```bash
+dfx canister call <canister_name> <method_name> '(<arguments>)'
+```
 
-### Note on frontend environment variables
+# Contributing
 
-If you are hosting frontend code somewhere without using DFX, you may need to make one of the following adjustments to ensure your project does not fetch the root key in production:
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-- set`DFX_NETWORK` to `ic` if you are using Webpack
-- use your own preferred method to replace `process.env.DFX_NETWORK` in the autogenerated declarations
-  - Setting `canisters -> {asset_canister_id} -> declarations -> env_override to a string` in `dfx.json` will replace `process.env.DFX_NETWORK` with the string in the autogenerated declarations
-- Write your own `createActor` constructor
+# License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
