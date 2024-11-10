@@ -1,5 +1,14 @@
 {
   "blockchains": {
     "local": "br5f7-7uaaa-aaaaa-qaaca-cai"
+  },
+  "evm_service": {
+    "ic": "umnn5-yyaaa-aaaak-qtpzq-cai"
+  },
+  "transactions": {
+    "ic": "uzk4q-zqaaa-aaaak-qtp2a-cai"
+  },
+  "users": {
+    "ic": "u6l2e-uiaaa-aaaak-qtp2q-cai"
   }
 }
