@@ -139,4 +139,44 @@ actor TransactionManager {
         };
         Buffer.toArray(txns)
     };
+
+    // Analytics: Get transaction count by status
+    public query func getTransactionCountByStatus() : async [(Text, Nat)] {
+        var confirmed: Nat = 0;
+        var pending: Nat = 0;
+        var failed: Nat = 0;
+        
+        for ((_, tx) in transactions.entries()) {
+            switch (tx.status) {
+                case ("CONFIRMED") { confirmed += 1 };
+                case ("PENDING") { pending += 1 };
+                case ("FAILED") { failed += 1 };
+                case (_) { };
+            };
+        };
+        
+        [("CONFIRMED", confirmed), ("PENDING", pending), ("FAILED", failed)]
+    };
+
+    // Analytics: Get total transaction volume
+    public query func getTotalTransactionVolume() : async Nat {
+        var totalVolume: Nat = 0;
+        for ((_, tx) in transactions.entries()) {
+            if (tx.status == "CONFIRMED") {
+                totalVolume += tx.amount;
+            };
+        };
+        totalVolume
+    };
+
+    // Analytics: Get transaction count for specific address
+    public query func getTransactionCountByAddress(address: Text) : async Nat {
+        var count: Nat = 0;
+        for ((_, tx) in transactions.entries()) {
+            if (tx.wallet_from == address or tx.wallet_to == address) {
+                count += 1;
+            };
+        };
+        count
+    };
 };
