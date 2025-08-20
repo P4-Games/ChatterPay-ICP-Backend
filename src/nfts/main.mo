@@ -3,6 +3,8 @@ import HashMap "mo:base/HashMap";
 import Nat "mo:base/Nat";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
+import Buffer "mo:base/Buffer";
+import Result "mo:base/Result";
 import Types "../types";
 
 actor NFTStorage {
@@ -163,5 +165,128 @@ actor NFTStorage {
             };
         };
         copies
+    };
+
+    // Validate NFT metadata
+    public func validateMetadata(metadata: NFTMetadata) : async Result.Result<Bool, Text> {
+        // Check if description is not empty
+        if (Text.size(metadata.description) == 0) {
+            return #err("Description cannot be empty");
+        };
+        
+        // Check if description is not too long (max 500 characters)
+        if (Text.size(metadata.description) > 500) {
+            return #err("Description cannot exceed 500 characters");
+        };
+        
+        // Check if at least one image URL is provided
+        let hasImage = switch (metadata.image_url.gcp, metadata.image_url.icp, metadata.image_url.ipfs) {
+            case (null, null, null) { false };
+            case (_, _, _) { true };
+        };
+        
+        if (not hasImage) {
+            return #err("At least one image URL must be provided");
+        };
+        
+        #ok(true)
+    };
+
+    // Batch create NFTs
+    public shared func batchCreateNFTs(
+        nftData: [(Text, Text, Text, Bool, Nat, ?Text, Nat, ?Text, Nat, NFTMetadata)]
+    ) : async Result.Result<[Text], Text> {
+        let results = Buffer.Buffer<Text>(nftData.size());
+        
+        for (data in nftData.vals()) {
+            let (channel_user_id, wallet, trxId, original, total_of_this, copy_of, copy_order, copy_of_original, copy_order_original, metadata) = data;
+            
+            // Validate metadata
+            switch (await validateMetadata(metadata)) {
+                case (#err(e)) { return #err("Validation failed for NFT: " # e) };
+                case (#ok(_)) { };
+            };
+            
+            lastId += 1;
+            let id = Nat.toText(lastId);
+            
+            let nft: NFT = {
+                id = id;
+                channel_user_id = channel_user_id;
+                wallet = wallet;
+                trxId = trxId;
+                timestamp = Time.now();
+                original = original;
+                total_of_this = total_of_this;
+                copy_of = copy_of;
+                copy_order = copy_order;
+                copy_of_original = copy_of_original;
+                copy_order_original = copy_order_original;
+                metadata = metadata;
+            };
+
+            nfts.put(id, nft);
+            
+            // Update wallet to NFTs mapping
+            switch (walletToNFTs.get(wallet)) {
+                case (null) {
+                    walletToNFTs.put(wallet, [id]);
+                };
+                case (?existing) {
+                    walletToNFTs.put(wallet, Array.append(existing, [id]));
+                };
+            };
+            
+            results.add(id);
+        };
+        
+        #ok(Buffer.toArray(results))
+    };
+
+    // Batch update NFT metadata
+    public shared func batchUpdateMetadata(
+        updates: [(Text, NFTMetadata)]
+    ) : async Result.Result<[Bool], Text> {
+        let results = Buffer.Buffer<Bool>(updates.size());
+        
+        for ((id, metadata) in updates.vals()) {
+            // Validate metadata
+            switch (await validateMetadata(metadata)) {
+                case (#err(e)) { return #err("Validation failed for NFT " # id # ": " # e) };
+                case (#ok(_)) { };
+            };
+            
+            switch (nfts.get(id)) {
+                case (null) { results.add(false) };
+                case (?existingNFT) {
+                    let updatedNFT: NFT = {
+                        id = existingNFT.id;
+                        channel_user_id = existingNFT.channel_user_id;
+                        wallet = existingNFT.wallet;
+                        trxId = existingNFT.trxId;
+                        timestamp = existingNFT.timestamp;
+                        original = existingNFT.original;
+                        total_of_this = existingNFT.total_of_this;
+                        copy_of = existingNFT.copy_of;
+                        copy_order = existingNFT.copy_order;
+                        copy_of_original = existingNFT.copy_of_original;
+                        copy_order_original = existingNFT.copy_order_original;
+                        metadata = metadata;
+                    };
+                    nfts.put(id, updatedNFT);
+                    results.add(true);
+                };
+            };
+        };
+        
+        #ok(Buffer.toArray(results))
+    };
+
+    // Get NFT count by wallet
+    public query func getNFTCountByWallet(wallet: Text) : async Nat {
+        switch (walletToNFTs.get(wallet)) {
+            case (null) { 0 };
+            case (?nftIds) { nftIds.size() };
+        }
     };
 }
