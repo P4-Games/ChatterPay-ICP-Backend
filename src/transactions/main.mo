@@ -34,6 +34,7 @@ actor TransactionManager {
             from: Text;
             amount: Text;
             privateKey: Text;
+            chainId: Nat;
         }) -> async {
             #Ok: {
                 txHash: Text;
@@ -45,16 +46,32 @@ actor TransactionManager {
             #Ok: Bool;
             #Err: Text;
         };
+        estimateGas: shared ({
+            to: Text;
+            from: Text;
+            amount: Text;
+            chainId: Nat;
+        }) -> async {
+            #Ok: {
+                gasLimit: Text;
+                gasPrice: Text;
+                maxFeePerGas: Text;
+                maxPriorityFeePerGas: Text;
+                estimatedCost: Text;
+            };
+            #Err: Text;
+        };
     };
 
     // Initialize EVM service with canister ID from environment
     private let evmService: EVMService = actor (ENV.getCanisterId("evm_service"));
 
-    // Create and execute transaction
+    // Create and execute transaction with multi-chain support
     public shared(msg) func makeTransfer(
         to: Text,
         amount: Nat,
-        privateKey: Text
+        privateKey: Text,
+        chainId: ?Nat
     ) : async Result.Result<Transaction, Text> {
         try {
             let addressValid = await evmService.validateAddress(to);
@@ -66,6 +83,10 @@ actor TransactionManager {
             };
 
             let caller_text = Principal.toText(msg.caller);
+            let selectedChainId = switch (chainId) {
+                case (?id) { id };
+                case (null) { 421614 }; // Default to Arbitrum Sepolia
+            };
 
             // Execute transfer with EVM service
             let result = await evmService.transfer({
@@ -73,6 +94,7 @@ actor TransactionManager {
                 from = caller_text;
                 amount = Nat.toText(amount);
                 privateKey = privateKey;
+                chainId = selectedChainId;
             });
 
             switch (result) {
@@ -178,5 +200,41 @@ actor TransactionManager {
             };
         };
         count
+    };
+
+    // Gas estimation for multi-chain transfers
+    public shared func estimateTransferGas(
+        to: Text,
+        amount: Nat,
+        chainId: ?Nat
+    ) : async Result.Result<{gasLimit: Text; gasPrice: Text; estimatedCost: Text}, Text> {
+        try {
+            let selectedChainId = switch (chainId) {
+                case (?id) { id };
+                case (null) { 421614 }; // Default to Arbitrum Sepolia
+            };
+
+            let result = await evmService.estimateGas({
+                to = to;
+                from = "0x0000000000000000000000000000000000000000"; // Placeholder for estimation
+                amount = Nat.toText(amount);
+                chainId = selectedChainId;
+            });
+
+            switch (result) {
+                case (#Ok(gasData)) {
+                    #ok({
+                        gasLimit = gasData.gasLimit;
+                        gasPrice = gasData.gasPrice;
+                        estimatedCost = gasData.estimatedCost;
+                    })
+                };
+                case (#Err(e)) {
+                    #err("Gas estimation failed: " # e)
+                };
+            }
+        } catch (e) {
+            #err("Gas estimation error: " # Error.message(e))
+        }
     };
 };

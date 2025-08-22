@@ -13,17 +13,64 @@ import type { TransactionReceipt, TransactionResponse } from 'ethers';
 
 // Config from environment
 const ARBITRUM_SEPOLIA_RPC = process.env.ARBITRUM_SEPOLIA_RPC || "https://sepolia-rollup.arbitrum.io/rpc";
-const CHAIN_ID = Number(process.env.CHAIN_ID || "421614");
+const POLYGON_RPC = process.env.POLYGON_RPC || "https://polygon-rpc.com";
+const BSC_RPC = process.env.BSC_RPC || "https://bsc-dataseed.binance.org";
+const ETHEREUM_RPC = process.env.ETHEREUM_RPC || "https://ethereum.publicnode.com";
 
-// Initialize provider
-const provider = new JsonRpcProvider(ARBITRUM_SEPOLIA_RPC);
+// Chain configurations
+const CHAIN_CONFIGS = {
+    421614: { name: "Arbitrum Sepolia", rpc: ARBITRUM_SEPOLIA_RPC },
+    137: { name: "Polygon", rpc: POLYGON_RPC },
+    56: { name: "BSC", rpc: BSC_RPC },
+    1: { name: "Ethereum", rpc: ETHEREUM_RPC }
+};
+
+const DEFAULT_CHAIN_ID = Number(process.env.CHAIN_ID || "421614");
+
+// Initialize providers for different chains
+const providers = new Map<number, JsonRpcProvider>();
+for (const [chainId, config] of Object.entries(CHAIN_CONFIGS)) {
+    providers.set(Number(chainId), new JsonRpcProvider(config.rpc));
+}
+
+// Get provider for specific chain
+function getProvider(chainId?: number): JsonRpcProvider {
+    const id = chainId || DEFAULT_CHAIN_ID;
+    const provider = providers.get(id);
+    if (!provider) {
+        throw new Error(`Unsupported chain ID: ${id}`);
+    }
+    return provider;
+}
 
 // Candid types
 const TransferParams = Record({
     to: text,
     from: text,
     amount: text,
-    privateKey: text
+    privateKey: text,
+    chainId: nat64
+});
+
+const GasEstimateParams = Record({
+    to: text,
+    from: text,
+    amount: text,
+    chainId: nat64
+});
+
+const GasEstimateResult = Record({
+    gasLimit: text,
+    gasPrice: text,
+    maxFeePerGas: text,
+    maxPriorityFeePerGas: text,
+    estimatedCost: text
+});
+
+const ChainInfo = Record({
+    chainId: nat64,
+    name: text,
+    supported: bool
 });
 
 const TransferResult = Record({
@@ -53,6 +100,7 @@ export default Canister({
                 return { Err: "Invalid recipient address" };
             }
 
+            const provider = getProvider(Number(params.chainId));
             const wallet = new Wallet(params.privateKey, provider);
 
             // Get balance as bigint
@@ -67,7 +115,7 @@ export default Canister({
             const tx = {
                 to: params.to,
                 value,
-                chainId: CHAIN_ID,
+                chainId: Number(params.chainId),
             };
 
             // Get gas data with retry logic
@@ -148,5 +196,67 @@ export default Canister({
         } catch (error: any) {
             return { Err: error.message };
         }
+    }),
+
+    estimateGas: query([GasEstimateParams], Result(GasEstimateResult), async (params) => {
+        try {
+            if (!ethers.isAddress(params.to)) {
+                return { Err: "Invalid recipient address" };
+            }
+
+            const provider = getProvider(Number(params.chainId));
+            const value = ethers.parseEther(params.amount);
+
+            const tx = {
+                to: params.to,
+                from: params.from,
+                value,
+                chainId: Number(params.chainId),
+            };
+
+            const [gasLimit, feeData] = await Promise.all([
+                provider.estimateGas(tx),
+                provider.getFeeData()
+            ]);
+
+            const estimatedCost = gasLimit * (feeData.gasPrice || 0n);
+
+            return {
+                Ok: {
+                    gasLimit: gasLimit.toString(),
+                    gasPrice: (feeData.gasPrice || 0n).toString(),
+                    maxFeePerGas: (feeData.maxFeePerGas || 0n).toString(),
+                    maxPriorityFeePerGas: (feeData.maxPriorityFeePerGas || 0n).toString(),
+                    estimatedCost: estimatedCost.toString()
+                }
+            };
+        } catch (error: any) {
+            return { Err: `Gas estimation failed: ${error.message}` };
+        }
+    }),
+
+    getSupportedChains: query([], [ChainInfo], () => {
+        return Object.entries(CHAIN_CONFIGS).map(([chainId, config]) => ({
+            chainId: BigInt(chainId),
+            name: config.name,
+            supported: true
+        }));
+    }),
+
+    getChainInfo: query([nat64], Result(ChainInfo), (chainId) => {
+        const id = Number(chainId);
+        const config = CHAIN_CONFIGS[id as keyof typeof CHAIN_CONFIGS];
+        
+        if (!config) {
+            return { Err: "Unsupported chain ID" };
+        }
+
+        return {
+            Ok: {
+                chainId: BigInt(id),
+                name: config.name,
+                supported: true
+            }
+        };
     })
 });
