@@ -70,46 +70,64 @@ The backend will be available at the provided canister URLs.
 
 - `src/`:
   - `types.mo`: Shared type definitions
-  - `transactions/`: Transaction management canister
-  - `users/`: User management canister
+  - `transactions/`: Transaction management canister with analytics
+  - `users/`: User management canister with security features
   - `blockchains/`: Blockchain configuration canister
   - `tokens/`: Token management canister
-  - `nfts/`: NFT management canister
+  - `nfts/`: NFT management canister with batch operations
   - `last_processed_blocks/`: Block processing tracking canister
+  - `evm_service/`: EVM integration service with multi-chain support
+  - `env/`: Environment configuration and constants
 - `dfx.json`: Project configuration file
 - `.gitignore`: Git ignore configuration
 - `README.md`: This file
+
+# Architecture
+
+![ICP Architecture](.docs/icp_architecture.jpeg)
+
+The ChatterPay ICP Backend follows a microservices architecture using Internet Computer canisters, providing scalable and secure blockchain infrastructure for the WhatsApp wallet application.
 
 # Canisters Overview
 
 The backend is composed of several specialized canisters:
 
-1. **TransactionStorage**:
-   - Manages transaction records
+1. **TransactionManager**:
+   - Manages transaction records with multi-chain support
    - Tracks transaction status and history
-   - Provides transaction querying capabilities
+   - Provides advanced analytics and querying capabilities
+   - **New Features**: Transaction analytics, volume tracking, gas estimation
+   - Supports Arbitrum, Polygon, BSC, and Ethereum networks
 
 2. **UserStorage**:
    - Handles user profiles and authentication
-   - Manages wallet associations
-   - Phone number to wallet mapping
+   - Manages wallet associations and phone number mapping
+   - **Security Features**: Rate limiting (10 req/min), audit logging, security metrics
+   - **New Features**: Enhanced validation, duplicate prevention, audit trails
 
-3. **BlockchainStorage**:
+3. **NFTStorage**:
+   - Handles NFT minting and management with batch operations
+   - Stores and validates NFT metadata
+   - Manages NFT ownership and transfers
+   - **New Features**: Batch creation/updates, metadata validation, enhanced querying
+
+4. **EVMService**:
+   - EVM blockchain integration service
+   - Multi-chain transaction execution
+   - **New Features**: Multi-chain support, gas estimation, chain management
+   - Supports multiple networks with automatic provider management
+
+5. **BlockchainStorage**:
    - Stores blockchain configurations
    - Manages smart contract addresses
    - Handles network-specific settings
 
-4. **TokenStorage**:
+6. **TokenStorage**:
    - Manages token information
    - Tracks token metadata
    - Chain-specific token configurations
 
-5. **NFTStorage**:
-   - Handles NFT minting and management
-   - Stores NFT metadata
-   - Manages NFT ownership and transfers
-
-6. **LastProcessedBlockStorage**:
+7. **LastProcessedBlockStorage**:
    - Tracks blockchain synchronization
    - Manages processing checkpoints
    - Network-specific block tracking
@@ -119,22 +137,48 @@ The backend is composed of several specialized canisters:
 Each canister exposes its API through Candid interfaces. Here are the main endpoints for each canister:
 
 ## Transactions
-- `addTransaction`: Create a new transaction record
+- `makeTransfer`: Execute multi-chain transfers with gas estimation
 - `getTransaction`: Retrieve transaction by ID
-- `getTransactionsByWallet`: Get transactions for a specific wallet
+- `getTransactionsByAddress`: Get transactions for a specific address
 - `getAllTransactions`: List all transactions
+- `getPendingTransactions`: Get pending transactions
+- **Analytics APIs**:
+  - `getTransactionCountByStatus`: Count transactions by status
+  - `getTotalTransactionVolume`: Get total confirmed transaction volume
+  - `getTransactionCountByAddress`: Count transactions for address
+  - `estimateTransferGas`: Estimate gas costs for transfers
 
 ## Users
-- `createUser`: Register a new user
+- `createUser`: Register a new user with validation
 - `getUser`: Retrieve user information
 - `getWalletByPhoneNumber`: Get wallet address by phone number
 - `updateUser`: Update user information
+- `deleteUser`: Remove user account
+- **Security APIs**:
+  - `getAuditLogs`: Get system audit logs
+  - `getAuditLogsByCaller`: Get logs for specific caller
+  - `getRateLimitStatus`: Check rate limit status
+  - `getSecurityMetrics`: Get security metrics
 
 ## NFTs
-- `createNFT`: Mint a new NFT
+- `createNFT`: Mint a new NFT with metadata validation
 - `getNFT`: Retrieve NFT information
 - `getNFTsByWallet`: Get NFTs owned by a wallet
 - `updateNFTMetadata`: Update NFT metadata
+- **Batch Operations**:
+  - `batchCreateNFTs`: Create multiple NFTs in one operation
+  - `batchUpdateMetadata`: Update multiple NFT metadata
+  - `validateMetadata`: Validate NFT metadata
+  - `getNFTCountByWallet`: Get NFT count for wallet
+
+## EVM Service
+- `transfer`: Execute cross-chain transfers
+- `getTransactionStatus`: Check transaction status
+- `validateAddress`: Validate Ethereum addresses
+- **Multi-chain APIs**:
+  - `estimateGas`: Estimate gas costs for transactions
+  - `getSupportedChains`: Get list of supported blockchains
+  - `getChainInfo`: Get information about specific chain
 
 For complete API documentation, deploy the canisters and visit the Candid interface.
 
