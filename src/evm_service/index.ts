@@ -1,3 +1,8 @@
+/**
+ * @fileoverview ChatterPay EVM Service - Unified contract management and blockchain interaction
+ * @author ChatterPay Team
+ */
+
 import { 
     Canister, 
     query, 
@@ -13,7 +18,9 @@ import {
 import { ethers, JsonRpcProvider, Wallet } from 'ethers';
 import type { TransactionReceipt, TransactionResponse } from 'ethers';
 
-// Config from environment
+/**
+ * RPC endpoint configurations from environment variables
+ */
 const ARBITRUM_SEPOLIA_RPC = process.env.ARBITRUM_SEPOLIA_RPC || "https://sepolia-rollup.arbitrum.io/rpc";
 const POLYGON_RPC = process.env.POLYGON_RPC || "https://polygon-rpc.com";
 const BSC_RPC = process.env.BSC_RPC || "https://bsc-dataseed.binance.org";
@@ -21,7 +28,10 @@ const ETHEREUM_RPC = process.env.ETHEREUM_RPC || "https://ethereum.publicnode.co
 const SCROLL_RPC = process.env.SCROLL_RPC || "https://rpc.scroll.io";
 const SCROLL_SEPOLIA_RPC = process.env.SCROLL_SEPOLIA_RPC || "https://sepolia-rpc.scroll.io";
 
-// Chain configurations
+/**
+ * Supported blockchain configurations
+ * Maps chain ID to network name and RPC endpoint
+ */
 const CHAIN_CONFIGS = {
     421614: { name: "Arbitrum Sepolia", rpc: ARBITRUM_SEPOLIA_RPC },
     137: { name: "Polygon", rpc: POLYGON_RPC },
@@ -29,17 +39,23 @@ const CHAIN_CONFIGS = {
     1: { name: "Ethereum", rpc: ETHEREUM_RPC },
     534352: { name: "Scroll", rpc: SCROLL_RPC },
     534351: { name: "Scroll Sepolia", rpc: SCROLL_SEPOLIA_RPC }
-};
+} as const;
 
+/** Default chain ID if not specified */
 const DEFAULT_CHAIN_ID = Number(process.env.CHAIN_ID || "421614");
 
-// Initialize providers for different chains
+/** Map of initialized JsonRpcProvider instances by chain ID */
 const providers = new Map<number, JsonRpcProvider>();
 for (const [chainId, config] of Object.entries(CHAIN_CONFIGS)) {
     providers.set(Number(chainId), new JsonRpcProvider(config.rpc));
 }
 
-// Get provider for specific chain
+/**
+ * Get JsonRpcProvider for a specific chain
+ * @param chainId - The chain ID to get provider for. Defaults to DEFAULT_CHAIN_ID
+ * @returns The JsonRpcProvider instance for the specified chain
+ * @throws Error if chain ID is not supported
+ */
 function getProvider(chainId?: number): JsonRpcProvider {
     const id = chainId || DEFAULT_CHAIN_ID;
     const provider = providers.get(id);
@@ -49,7 +65,11 @@ function getProvider(chainId?: number): JsonRpcProvider {
     return provider;
 }
 
-// Candid types
+/**
+ * Candid type definitions for ICP canister interface
+ */
+
+/** Parameters for token transfer operations */
 const TransferParams = Record({
     to: text,
     from: text,
@@ -58,6 +78,7 @@ const TransferParams = Record({
     chainId: nat64
 });
 
+/** Parameters for gas estimation */
 const GasEstimateParams = Record({
     to: text,
     from: text,
@@ -65,6 +86,7 @@ const GasEstimateParams = Record({
     chainId: nat64
 });
 
+/** Result of gas estimation containing fee data */
 const GasEstimateResult = Record({
     gasLimit: text,
     gasPrice: text,
@@ -73,12 +95,14 @@ const GasEstimateResult = Record({
     estimatedCost: text
 });
 
+/** Information about a supported blockchain */
 const ChainInfo = Record({
     chainId: nat64,
     name: text,
     supported: bool
 });
 
+/** Result of a successful transfer operation */
 const TransferResult = Record({
     txHash: text,
     status: text,
@@ -86,6 +110,7 @@ const TransferResult = Record({
     effectiveGasPrice: text
 });
 
+/** Status information for a transaction */
 const TransactionStatusResult = Record({
     status: text,
     confirmations: nat64,
@@ -93,15 +118,20 @@ const TransactionStatusResult = Record({
     effectiveGasPrice: text
 });
 
+/** Generic Result type for operations that can succeed or fail */
 const Result = <T>(type: T) => Variant({
     Ok: type,
     Err: text
 });
 
-// Owner management - will be set on first deployment
+/**
+ * State Management
+ */
+
+/** Owner principal - will be set on first deployment */
 let OWNER: string | null = null;
 
-// ChatterPay contracts by network ID (any network supported)
+/** ChatterPay contract addresses by network ID */
 let chatterPayContracts: { [networkId: number]: {
     factory?: string;
     implementation?: string;
@@ -128,7 +158,7 @@ let chatterPayContracts: { [networkId: number]: {
     // Can add any network: Ethereum, Polygon, Arbitrum, etc.
 };
 
-// ABIs by contract type
+/** Contract ABIs by contract type */
 let contractABIs: { [contractType: string]: string } = {
     factory: "",
     implementation: "",
@@ -137,8 +167,18 @@ let contractABIs: { [contractType: string]: string } = {
     entryPoint: ""
 };
 
+/**
+ * ChatterPay EVM Service Canister
+ * 
+ * Provides unified contract management and blockchain interaction capabilities
+ * for the ChatterPay ecosystem across multiple EVM-compatible networks.
+ */
 export default Canister({
-    // Initialize owner (can only be called once, when OWNER is null)
+    /**
+     * Initialize the canister owner
+     * Can only be called once when OWNER is null
+     * @returns The owner principal ID or error message
+     */
     initializeOwner: update([], Result(text), () => {
         if (OWNER !== null) {
             return { Err: "Owner already initialized" };
@@ -147,7 +187,11 @@ export default Canister({
         return { Ok: OWNER };
     }),
 
-    // Transfer ownership (only current owner)
+    /**
+     * Transfer ownership to a new principal
+     * @param newOwner - The new owner's principal ID
+     * @returns Success boolean or error message
+     */
     setOwner: update([text], Result(bool), (newOwner: string) => {
         if (OWNER === null) {
             return { Err: "Owner not initialized. Call initializeOwner first." };
@@ -159,9 +203,19 @@ export default Canister({
         return { Ok: true };
     }),
 
+    /**
+     * Get the current owner principal ID
+     * @returns The owner principal ID or empty string if not set
+     */
     getOwner: query([], text, () => OWNER || ""),
 
-    // Update contract addresses for any network (owner only)
+    /**
+     * Update contract addresses for a specific network
+     * Only the owner can perform this operation
+     * @param networkId - The network ID (e.g., 534352 for Scroll)
+     * @param contracts - Object containing contract addresses
+     * @returns Success boolean or error message
+     */
     updateNetworkContracts: update([nat64, Record({
         factory: text,
         implementation: text,
@@ -186,7 +240,12 @@ export default Canister({
         return { Ok: true };
     }),
 
-    // Update ABIs (owner only)
+    /**
+     * Update contract ABIs for all contract types
+     * Only the owner can perform this operation
+     * @param abis - Object containing ABI JSON strings for each contract type
+     * @returns Success boolean or error message
+     */
     updateABIs: update([Record({
         factory: text,
         implementation: text,
@@ -209,7 +268,11 @@ export default Canister({
         return { Ok: true };
     }),
 
-    // Get contracts for any network
+    /**
+     * Get contract addresses for a specific network
+     * @param networkId - The network ID to get contracts for
+     * @returns Object containing contract addresses for the network
+     */
     getNetworkContracts: query([nat64], Record({
         factory: text,
         implementation: text,
@@ -227,12 +290,21 @@ export default Canister({
         };
     }),
 
-    // Get all supported networks
+    /**
+     * Get all supported network IDs
+     * @returns Array of network IDs that have been configured
+     */
     getSupportedNetworks: query([], [nat64], () => {
         return Object.keys(chatterPayContracts).map(id => BigInt(id));
     }),
 
-    // Create user wallet using factory contract
+    /**
+     * Create a new user wallet using the factory contract
+     * @param networkId - The network ID where the wallet should be created
+     * @param userHash - Unique hash identifier for the user
+     * @param salt - Random salt for wallet address generation
+     * @returns The predicted wallet address or error message
+     */
     createUserWallet: update([nat64, text, text], Result(text), async (networkId: bigint, userHash: string, salt: string) => {
         try {
             const contracts = chatterPayContracts[Number(networkId)];
@@ -260,7 +332,11 @@ export default Canister({
         }
     }),
 
-    // Call any ChatterPay contract method
+    /**
+     * Call any method on a ChatterPay contract
+     * @param callParams - Parameters including network ID, contract type, method name, params, and private key
+     * @returns Transaction result with hash, status, and gas used
+     */
     callContract: update([Record({
         networkId: nat64,
         contractType: text, // "factory", "implementation", "nft", etc.
@@ -309,6 +385,11 @@ export default Canister({
         }
     }),
 
+    /**
+     * Execute a native token transfer on any supported network
+     * @param params - Transfer parameters including to, from, amount, private key, and chain ID
+     * @returns Transaction result with hash, status, gas used, and effective gas price
+     */
     transfer: update([TransferParams], Result(TransferResult), async (params: Record<string, unknown>) => {
         try {
             // Validate inputs
@@ -381,6 +462,11 @@ export default Canister({
         }
     }),
 
+    /**
+     * Get the current status of a transaction
+     * @param txHash - The transaction hash to check
+     * @returns Transaction status with confirmations, gas used, and effective gas price
+     */
     getTransactionStatus: query([text], Result(TransactionStatusResult), async (txHash: string) => {
         try {
             const provider = getProvider(); // Use default provider
@@ -410,6 +496,11 @@ export default Canister({
         }
     }),
 
+    /**
+     * Validate if an address is a valid Ethereum address
+     * @param address - The address string to validate
+     * @returns Boolean indicating if the address is valid
+     */
     validateAddress: query([text], Result(bool), (address: string) => {
         try {
             return { Ok: ethers.isAddress(address) };
@@ -419,6 +510,11 @@ export default Canister({
         }
     }),
 
+    /**
+     * Estimate gas costs for a transaction
+     * @param params - Gas estimation parameters including to, from, amount, and chain ID
+     * @returns Gas estimation with limit, price, and total estimated cost
+     */
     estimateGas: query([GasEstimateParams], Result(GasEstimateResult), async (params: Record<string, unknown>) => {
         try {
             if (!ethers.isAddress(params.to)) {
@@ -457,6 +553,10 @@ export default Canister({
         }
     }),
 
+    /**
+     * Get information about all supported blockchain networks
+     * @returns Array of chain information including ID, name, and support status
+     */
     getSupportedChains: query([], [ChainInfo], () => {
         return Object.entries(CHAIN_CONFIGS).map(([chainId, config]) => ({
             chainId: BigInt(chainId),
@@ -465,6 +565,11 @@ export default Canister({
         }));
     }),
 
+    /**
+     * Get information about a specific blockchain network
+     * @param chainId - The chain ID to get information for
+     * @returns Chain information or error if not supported
+     */
     getChainInfo: query([nat64], Result(ChainInfo), (chainId: bigint) => {
         const id = Number(chainId);
         const config = CHAIN_CONFIGS[id as keyof typeof CHAIN_CONFIGS];
