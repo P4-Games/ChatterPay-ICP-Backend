@@ -1,3 +1,4 @@
+![Repo Cover](.docs/readme_banner.jpg)
 # ChatterPay ICP Backend
 
 ![](https://img.shields.io/badge/Motoko-informational?style=flat&logo=dfinity&logoColor=white&color=6aa6f8)
