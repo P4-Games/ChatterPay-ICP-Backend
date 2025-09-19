@@ -12,9 +12,6 @@
     "test": "npm test --workspaces --if-present"
   },
   "type": "module",
-  "workspaces": [
-    "src/my_canister_project_frontend"
-  ],
   "dependencies": {
     "azle": "^0.24.1",
     "ethers": "^6.13.4"

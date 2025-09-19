@@ -12,8 +12,9 @@ import {
     nat64, 
     bool,
     Variant,
-    caller,
-    Principal
+    ic,
+    Vec,
+    CandidType
 } from 'azle/experimental';
 import { ethers, JsonRpcProvider, Wallet } from 'ethers';
 import type { TransactionReceipt, TransactionResponse } from 'ethers';
@@ -119,7 +120,7 @@ const TransactionStatusResult = Record({
 });
 
 /** Generic Result type for operations that can succeed or fail */
-const Result = <T>(type: T) => Variant({
+const Result = <T extends CandidType>(type: T) => Variant({
     Ok: type,
     Err: text
 });
@@ -183,7 +184,7 @@ export default Canister({
         if (OWNER !== null) {
             return { Err: "Owner already initialized" };
         }
-        OWNER = caller().toString();
+        OWNER = ic.caller().toString();
         return { Ok: OWNER };
     }),
 
@@ -196,7 +197,7 @@ export default Canister({
         if (OWNER === null) {
             return { Err: "Owner not initialized. Call initializeOwner first." };
         }
-        if (caller().toString() !== OWNER) {
+        if (ic.caller().toString() !== OWNER) {
             return { Err: "Only current owner can transfer ownership" };
         }
         OWNER = newOwner;
@@ -222,11 +223,11 @@ export default Canister({
         nft: text,
         paymaster: text,
         entryPoint: text
-    })], Result(bool), (networkId: bigint, contracts: Record<string, string>) => {
+    })], Result(bool), (networkId: bigint, contracts: any) => {
         if (OWNER === null) {
             return { Err: "Owner not initialized" };
         }
-        if (caller().toString() !== OWNER) {
+        if (ic.caller().toString() !== OWNER) {
             return { Err: "Only owner can update contracts" };
         }
         
@@ -252,11 +253,11 @@ export default Canister({
         nft: text,
         paymaster: text,
         entryPoint: text
-    })], Result(bool), (abis: Record<string, string>) => {
+    })], Result(bool), (abis: any) => {
         if (OWNER === null) {
             return { Err: "Owner not initialized" };
         }
-        if (caller().toString() !== OWNER) {
+        if (ic.caller().toString() !== OWNER) {
             return { Err: "Only owner can update ABIs" };
         }
         
@@ -294,8 +295,8 @@ export default Canister({
      * Get all supported network IDs
      * @returns Array of network IDs that have been configured
      */
-    getSupportedNetworks: query([], [nat64], () => {
-        return Object.keys(chatterPayContracts).map(id => BigInt(id));
+    getSupportedNetworks: query([], text, () => {
+        return JSON.stringify(Object.keys(chatterPayContracts).map(id => BigInt(id)));
     }),
 
     /**
@@ -347,29 +348,30 @@ export default Canister({
         txHash: text,
         status: text,
         gasUsed: text
-    })), async (callParams: Record<string, unknown>) => {
+    })), async (callParams: any) => {
         try {
             const contracts = chatterPayContracts[Number(callParams.networkId)];
             if (!contracts) {
                 return { Err: "Network not supported" };
             }
 
-            const contractAddress = contracts[callParams.contractType as keyof typeof contracts];
+            const contractType = callParams.contractType as keyof typeof contracts;
+            const contractAddress = contracts[contractType];
             if (!contractAddress) {
                 return { Err: `${callParams.contractType} contract not configured for this network` };
             }
 
-            const abi = contractABIs[callParams.contractType];
+            const abi = contractABIs[callParams.contractType as string];
             if (!abi) {
                 return { Err: `ABI not configured for ${callParams.contractType}` };
             }
 
             const provider = getProvider(Number(callParams.networkId));
-            const wallet = new Wallet(callParams.privateKey, provider);
+            const wallet = new Wallet(callParams.privateKey as string, provider);
             const contract = new ethers.Contract(contractAddress, JSON.parse(abi), wallet);
             
-            const methodParams = JSON.parse(callParams.params);
-            const tx = await contract[callParams.methodName](...methodParams);
+            const methodParams = JSON.parse(callParams.params as string);
+            const tx = await contract[callParams.methodName as string](...methodParams);
             const receipt = await tx.wait();
 
             return {
@@ -390,19 +392,19 @@ export default Canister({
      * @param params - Transfer parameters including to, from, amount, private key, and chain ID
      * @returns Transaction result with hash, status, gas used, and effective gas price
      */
-    transfer: update([TransferParams], Result(TransferResult), async (params: Record<string, unknown>) => {
+    transfer: update([TransferParams], Result(TransferResult), async (params: any) => {
         try {
             // Validate inputs
-            if (!ethers.isAddress(params.to)) {
+            if (!ethers.isAddress(params.to as string)) {
                 return { Err: "Invalid recipient address" };
             }
 
             const provider = getProvider(Number(params.chainId));
-            const wallet = new Wallet(params.privateKey, provider);
+            const wallet = new Wallet(params.privateKey as string, provider);
 
             // Get balance as bigint
             const balance = await provider.getBalance(wallet.address);
-            const value = ethers.parseEther(params.amount);
+            const value = ethers.parseEther(params.amount as string);
             
             if (balance < value) {
                 return { Err: "Insufficient balance" };
@@ -410,7 +412,7 @@ export default Canister({
 
             // Prepare transaction
             const tx = {
-                to: params.to,
+                to: params.to as string,
                 value,
                 chainId: Number(params.chainId),
             };
@@ -453,7 +455,7 @@ export default Canister({
                     txHash: transaction.hash,
                     status: receipt.status === 1 ? 'CONFIRMED' : 'FAILED',
                     gasUsed: receipt.gasUsed.toString(),
-                    effectiveGasPrice: (receipt.gasPrice || receipt.effectiveGasPrice || 0n).toString()
+                    effectiveGasPrice: (receipt.gasPrice || 0n).toString()
                 }
             };
         } catch (error: unknown) {
@@ -515,18 +517,18 @@ export default Canister({
      * @param params - Gas estimation parameters including to, from, amount, and chain ID
      * @returns Gas estimation with limit, price, and total estimated cost
      */
-    estimateGas: query([GasEstimateParams], Result(GasEstimateResult), async (params: Record<string, unknown>) => {
+    estimateGas: query([GasEstimateParams], Result(GasEstimateResult), async (params: any) => {
         try {
-            if (!ethers.isAddress(params.to)) {
+            if (!ethers.isAddress(params.to as string)) {
                 return { Err: "Invalid recipient address" };
             }
 
             const provider = getProvider(Number(params.chainId));
-            const value = ethers.parseEther(params.amount);
+            const value = ethers.parseEther(params.amount as string);
 
             const tx = {
-                to: params.to,
-                from: params.from,
+                to: params.to as string,
+                from: params.from as string,
                 value,
                 chainId: Number(params.chainId),
             };
@@ -557,7 +559,7 @@ export default Canister({
      * Get information about all supported blockchain networks
      * @returns Array of chain information including ID, name, and support status
      */
-    getSupportedChains: query([], [ChainInfo], () => {
+    getSupportedChains: query([], Vec(ChainInfo), () => {
         return Object.entries(CHAIN_CONFIGS).map(([chainId, config]) => ({
             chainId: BigInt(chainId),
             name: config.name,
