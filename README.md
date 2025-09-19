@@ -5,10 +5,9 @@
 ![](https://img.shields.io/badge/DFX-informational?style=flat&logo=dfinity&logoColor=white&color=6aa6f8)
 ![](https://img.shields.io/badge/Candid-informational?style=flat&logo=dfinity&logoColor=white&color=6aa6f8)
 
-ChatterPay is a Wallet for WhatsApp that integrates AI and Account Abstraction, enabling any user to use blockchain easily and securely without technical knowledge. This repository contains the Internet Computer backend implementation using Motoko.
+ChatterPay is a Wallet that allows anyone to send and receive crypto with WhatsApp messages. Enabling crypto for +2B WhatsApp users.
 
-## Sponsored by:
-![ICP Argentina](https://github.com/user-attachments/assets/65fe11f9-da59-4b4e-8f2e-4b50555a412a)
+This repository contains the Internet Computer backend implementation using Motoko.
 
 **Components**:
 
@@ -87,6 +86,15 @@ The backend will be available at the provided canister URLs.
 ![ICP Architecture](.docs/icp_architecture.jpeg)
 
 The ChatterPay ICP Backend follows a microservices architecture using Internet Computer canisters, providing scalable and secure blockchain infrastructure for the WhatsApp wallet application.
+
+# Example ideal flows:
+These would be the account creation and transfer flows we want to achieve in ICP, which allow us to minimize trust without leaving the WhatsApp interface.
+
+## Onboarding:
+![ICP Onboarding flow](.docs/onboarding_flow.jpg)
+
+## Transfer Flow:
+![ICP Transfer flow](.docs/transfer_flow.jpg)
 
 # Canisters Overview
 
