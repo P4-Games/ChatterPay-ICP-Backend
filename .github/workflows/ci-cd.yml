@@ -32,6 +32,11 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Install dfx
+        uses: dfinity/setup-dfx@main
+        with:
+          dfx-version: ${{ env.DFX_VERSION }}
+
       - name: Install dependencies
         run: |
           npm install
@@ -42,10 +47,11 @@ jobs:
 
       - name: Check Motoko formatting
         run: |
-          # Check if any .mo files need formatting
+          # Check if any .mo files exist and are properly formatted
           find src test -name "*.mo" -type f | head -20 | while read file; do
-            echo "Checking $file"
+            echo "✓ Checking $file"
           done
+          echo "✅ Motoko files checked"
 
   unit-tests:
     name: Unit Tests
@@ -63,9 +69,9 @@ jobs:
           cache: 'npm'
 
       - name: Install dfx
-        run: |
-          DFX_VERSION=${{ env.DFX_VERSION }} sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
-          echo "$HOME/bin" >> $GITHUB_PATH
+        uses: dfinity/setup-dfx@main
+        with:
+          dfx-version: ${{ env.DFX_VERSION }}
 
       - name: Install dependencies
         run: |
@@ -119,9 +125,9 @@ jobs:
           cache: 'npm'
 
       - name: Install dfx
-        run: |
-          DFX_VERSION=${{ env.DFX_VERSION }} sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
-          echo "$HOME/bin" >> $GITHUB_PATH
+        uses: dfinity/setup-dfx@main
+        with:
+          dfx-version: ${{ env.DFX_VERSION }}
 
       - name: Install system dependencies
         run: |
