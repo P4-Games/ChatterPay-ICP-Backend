@@ -1,3 +1,8 @@
+/**
+ * @fileoverview ChatterPay Transaction Manager - Multi-chain transaction processing and analytics
+ * @author ChatterPay Team
+ */
+
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import HashMap "mo:base/HashMap";
@@ -9,8 +14,14 @@ import Buffer "mo:base/Buffer";
 import Error "mo:base/Error";
 import ENV "../env/lib";
 
-actor TransactionManager {
-    // Adjusted Transaction type to match Mongoose schema fields
+/**
+ * TransactionManager Canister
+ * 
+ * Handles multi-chain transaction processing, execution, and analytics for the ChatterPay ecosystem.
+ * Integrates with EVM service for blockchain interactions and provides comprehensive transaction tracking.
+ */
+persistent actor TransactionManager {
+    /** Transaction type definition matching database schema fields */
     type Transaction = {
         id: Text;
         trx_hash: Text;
@@ -23,17 +34,18 @@ actor TransactionManager {
         token: Text;
     };
 
-    // Storage
-    private stable var nextId: Nat = 0;
-    private var transactions = HashMap.HashMap<Text, Transaction>(0, Text.equal, Text.hash);
+    /** Counter for generating unique transaction IDs */
+    private var nextId: Nat = 0;
+    /** HashMap storing transactions by their ID */
+    private transient var transactions = HashMap.HashMap<Text, Transaction>(0, Text.equal, Text.hash);
 
-    // EVM service interface
+    /** EVM service actor interface for blockchain interactions */
     type EVMService = actor {
-        transfer: shared ({
+        transferSigned: shared ({
             to: Text;
             from: Text;
             amount: Text;
-            privateKey: Text;
+            signedTransaction: Text; // Pre-signed transaction from client
             chainId: Nat;
         }) -> async {
             #Ok: {
@@ -63,14 +75,21 @@ actor TransactionManager {
         };
     };
 
-    // Initialize EVM service with canister ID from environment
-    private let evmService: EVMService = actor (ENV.getCanisterId("evm_service"));
+    /** Initialize EVM service with canister ID from environment */
+    private transient let evmService: EVMService = actor (ENV.getCanisterId("evm_service"));
 
-    // Create and execute transaction with multi-chain support
+    /**
+     * Execute a multi-chain token transfer transaction using pre-signed transaction
+     * @param to - Recipient wallet address
+     * @param amount - Amount to transfer (in wei or token units)
+     * @param signedTransaction - Pre-signed transaction from client (never expose private keys)
+     * @param chainId - Optional chain ID, defaults to Arbitrum Sepolia
+     * @returns Transaction result with hash and status, or error message
+     */
     public shared(msg) func makeTransfer(
         to: Text,
         amount: Nat,
-        privateKey: Text,
+        signedTransaction: Text,
         chainId: ?Nat
     ) : async Result.Result<Transaction, Text> {
         try {
@@ -88,12 +107,12 @@ actor TransactionManager {
                 case (null) { 421614 }; // Default to Arbitrum Sepolia
             };
 
-            // Execute transfer with EVM service
-            let result = await evmService.transfer({
+            // Execute transfer with EVM service using pre-signed transaction
+            let result = await evmService.transferSigned({
                 to = to;
                 from = caller_text;
                 amount = Nat.toText(amount);
-                privateKey = privateKey;
+                signedTransaction = signedTransaction;
                 chainId = selectedChainId;
             });
 
@@ -126,12 +145,19 @@ actor TransactionManager {
         }
     };
 
-    // Get transaction by ID
+    /**
+     * Get transaction details by ID
+     * @param id - Transaction ID
+     * @returns Transaction details or null if not found
+     */
     public query func getTransaction(id: Text) : async ?Transaction {
         transactions.get(id)
     };
 
-    // Get all transactions
+    /**
+     * Get all transactions in the system
+     * @returns Array of all transactions
+     */
     public query func getAllTransactions() : async [Transaction] {
         let txns = Buffer.Buffer<Transaction>(0);
         for ((_, tx) in transactions.entries()) {
@@ -140,7 +166,11 @@ actor TransactionManager {
         Buffer.toArray(txns)
     };
 
-    // Get transactions by address
+    /**
+     * Get transactions associated with a specific wallet address
+     * @param address - Wallet address to search for
+     * @returns Array of transactions where the address is sender or recipient
+     */
     public query func getTransactionsByAddress(address: Text) : async [Transaction] {
         let txns = Buffer.Buffer<Transaction>(0);
         for ((_, tx) in transactions.entries()) {
@@ -151,7 +181,10 @@ actor TransactionManager {
         Buffer.toArray(txns)
     };
 
-    // Get pending transactions
+    /**
+     * Get all transactions with pending status
+     * @returns Array of pending transactions
+     */
     public query func getPendingTransactions() : async [Transaction] {
         let txns = Buffer.Buffer<Transaction>(0);
         for ((_, tx) in transactions.entries()) {
@@ -162,7 +195,10 @@ actor TransactionManager {
         Buffer.toArray(txns)
     };
 
-    // Analytics: Get transaction count by status
+    /**
+     * Get transaction count grouped by status for analytics
+     * @returns Array of tuples containing status and count
+     */
     public query func getTransactionCountByStatus() : async [(Text, Nat)] {
         var confirmed: Nat = 0;
         var pending: Nat = 0;
@@ -180,7 +216,10 @@ actor TransactionManager {
         [("CONFIRMED", confirmed), ("PENDING", pending), ("FAILED", failed)]
     };
 
-    // Analytics: Get total transaction volume
+    /**
+     * Get total transaction volume across all confirmed transactions
+     * @returns Total volume in wei or token units
+     */
     public query func getTotalTransactionVolume() : async Nat {
         var totalVolume: Nat = 0;
         for ((_, tx) in transactions.entries()) {
@@ -191,7 +230,11 @@ actor TransactionManager {
         totalVolume
     };
 
-    // Analytics: Get transaction count for specific address
+    /**
+     * Get transaction count for a specific wallet address
+     * @param address - Wallet address to count transactions for
+     * @returns Number of transactions associated with the address
+     */
     public query func getTransactionCountByAddress(address: Text) : async Nat {
         var count: Nat = 0;
         for ((_, tx) in transactions.entries()) {
@@ -202,7 +245,13 @@ actor TransactionManager {
         count
     };
 
-    // Gas estimation for multi-chain transfers
+    /**
+     * Estimate gas costs for a multi-chain transfer
+     * @param to - Recipient wallet address
+     * @param amount - Amount to transfer
+     * @param chainId - Optional chain ID, defaults to Arbitrum Sepolia
+     * @returns Gas estimation details or error message
+     */
     public shared func estimateTransferGas(
         to: Text,
         amount: Nat,

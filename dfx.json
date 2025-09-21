@@ -22,7 +22,7 @@
     },
     "evm_service": {
       "type": "custom",
-      "build": "npx azle evm_service",
+      "build": "npx azle",
       "root": "src/evm_service",
       "ts": "src/evm_service/index.ts",
       "candid": "src/evm_service/index.did",

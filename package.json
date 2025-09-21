@@ -12,14 +12,11 @@
     "test": "npm test --workspaces --if-present"
   },
   "type": "module",
-  "workspaces": [
-    "src/my_canister_project_frontend"
-  ],
   "dependencies": {
     "azle": "^0.24.1",
-    "ethers": "^6.13.4"
+    "ethers": "^6.15.0"
   },
   "devDependencies": {
-    "dotenv": "^16.4.5"
+    "dotenv": "^17.2.2"
   }
 }

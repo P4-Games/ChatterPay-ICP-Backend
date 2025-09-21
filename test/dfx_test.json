@@ -1,0 +1,39 @@
+{
+  "canisters": {
+    "main_test_runner": {
+      "main": "test/main_test.mo",
+      "type": "motoko"
+    },
+    "users_test": {
+      "main": "test/users_test.mo",
+      "type": "motoko"
+    },
+    "transactions_test": {
+      "main": "test/transactions_test.mo",
+      "type": "motoko"
+    },
+    "tokens_test": {
+      "main": "test/tokens_test.mo",
+      "type": "motoko"
+    },
+    "blockchains_test": {
+      "main": "test/blockchains_test.mo",
+      "type": "motoko"
+    },
+    "nfts_test": {
+      "main": "test/nfts_test.mo",
+      "type": "motoko"
+    },
+    "last_processed_blocks_test": {
+      "main": "test/last_processed_blocks_test.mo",
+      "type": "motoko"
+    }
+  },
+  "defaults": {
+    "build": {
+      "packtool": "mops sources",
+      "args": ""
+    }
+  },
+  "version": 1
+}

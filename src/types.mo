@@ -1,4 +1,10 @@
+/**
+ * @fileoverview ChatterPay Types - Core type definitions for the ChatterPay ecosystem
+ * @author ChatterPay Team
+ */
+
 module {
+    /** Transaction type for blockchain transaction records */
     public type Transaction = {
         id: Nat;
         trx_hash: Text;
@@ -11,6 +17,7 @@ module {
         token: Text;
     };
 
+    /** User type for user account information */
     public type User = {
         id: Nat;
         name: ?Text;         // Optional fields use ?Type
@@ -19,9 +26,9 @@ module {
         photo: ?Text;
         wallet: Text;
         code: ?Nat;
-        privateKey: Text;
     };
 
+    /** Contracts type for smart contract addresses */
     public type Contracts = {
         entryPoint: ?Text;
         factoryAddress: ?Text;
@@ -31,6 +38,7 @@ module {
         paymasterAddress: ?Text;
     };
 
+    /** Blockchain type for blockchain network configuration */
     public type Blockchain = {
         id: Nat;
         name: Text;
@@ -42,6 +50,7 @@ module {
         contracts: Contracts;
     };
 
+    /** Token type for ERC-20 token configuration */
     public type Token = {
         id: Nat;
         name: Text;
@@ -52,6 +61,7 @@ module {
         symbol: Text;
     };
 
+    /** LastProcessedBlock type for blockchain synchronization tracking */
     public type LastProcessedBlock = {
         id: Nat;
         networkName: Text;
@@ -59,23 +69,27 @@ module {
         updatedAt: Int;  // Timestamp in nanoseconds
     };
 
+    /** ImageUrl type for NFT image storage across different platforms */
     public type ImageUrl = {
         gcp: ?Text;
         icp: ?Text;
         ipfs: ?Text;
     };
 
+    /** Geolocation type for NFT location metadata */
     public type Geolocation = {
         latitud: ?Text;
         longitud: ?Text;
     };
 
+    /** NFTMetadata type for NFT descriptive information */
     public type NFTMetadata = {
         image_url: ImageUrl;
         description: Text;
         geolocation: ?Geolocation;
     };
 
+    /** NFT type for Non-Fungible Token records */
     public type NFT = {
         id: Text;
         channel_user_id: Text;
