@@ -1,3 +1,8 @@
+/**
+ * @fileoverview ChatterPay Last Processed Block Storage - Blockchain synchronization tracking
+ * @author ChatterPay Team
+ */
+
 import Array "mo:base/Array";
 import HashMap "mo:base/HashMap";
 import Nat "mo:base/Nat";
@@ -6,14 +11,29 @@ import Text "mo:base/Text";
 import Time "mo:base/Time";
 import Types "../types";
 
+/**
+ * LastProcessedBlockStorage Canister
+ * 
+ * Tracks the last processed block numbers for different blockchain networks.
+ * Essential for maintaining synchronization state during blockchain event processing.
+ */
 persistent actor LastProcessedBlockStorage {
+    /** LastProcessedBlock type definition from Types module */
     type LastProcessedBlock = Types.LastProcessedBlock;
     
+    /** Counter for generating unique block record IDs */
     private transient var nextId: Nat = 0;
+    /** HashMap storing last processed block records by internal ID */
     private transient var blocks = HashMap.HashMap<Nat, LastProcessedBlock>(0, Nat.equal, func(n: Nat) : Nat32 { Nat32.fromNat(n % 2**32) });
+    /** HashMap mapping network names to internal IDs for fast lookup */
     private transient var networkToId = HashMap.HashMap<Text, Nat>(0, Text.equal, Text.hash);
 
-    // Create or update last processed block
+    /**
+     * Create or update last processed block number for a network
+     * @param networkName - Name of the blockchain network
+     * @param blockNumber - Latest processed block number
+     * @returns Internal ID of the created or updated record
+     */
     public shared func updateLastProcessedBlock(
         networkName: Text,
         blockNumber: Nat
@@ -52,7 +72,11 @@ persistent actor LastProcessedBlockStorage {
         }
     };
 
-    // Get last processed block by network name
+    /**
+     * Get last processed block information for a network
+     * @param networkName - Name of the blockchain network
+     * @returns Last processed block record or null if not found
+     */
     public query func getLastProcessedBlock(networkName: Text) : async ?LastProcessedBlock {
         switch (networkToId.get(networkName)) {
             case (null) { null };
@@ -60,7 +84,10 @@ persistent actor LastProcessedBlockStorage {
         }
     };
 
-    // Get all last processed blocks
+    /**
+     * Get all last processed block records
+     * @returns Array of all last processed block records
+     */
     public query func getAllLastProcessedBlocks() : async [LastProcessedBlock] {
         var blockArray: [LastProcessedBlock] = [];
         for ((id, block) in blocks.entries()) {
@@ -69,7 +96,11 @@ persistent actor LastProcessedBlockStorage {
         blockArray
     };
 
-    // Delete last processed block
+    /**
+     * Delete last processed block record for a network
+     * @param networkName - Name of the blockchain network
+     * @returns True if deletion successful, false if record not found
+     */
     public shared func deleteLastProcessedBlock(networkName: Text) : async Bool {
         switch (networkToId.get(networkName)) {
             case (null) { false };

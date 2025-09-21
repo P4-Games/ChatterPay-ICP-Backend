@@ -1,3 +1,8 @@
+/**
+ * @fileoverview ChatterPay NFT Storage - NFT management and metadata handling
+ * @author ChatterPay Team
+ */
+
 import Array "mo:base/Array";
 import HashMap "mo:base/HashMap";
 import Nat "mo:base/Nat";
@@ -7,17 +12,43 @@ import Buffer "mo:base/Buffer";
 import Result "mo:base/Result";
 import Types "../types";
 
+/**
+ * NFTStorage Canister
+ * 
+ * Manages NFT (Non-Fungible Token) creation, metadata, and ownership tracking
+ * for the ChatterPay ecosystem. Supports original NFTs and copy management.
+ */
 persistent actor NFTStorage {
+    /** NFT type definition from Types module */
     type NFT = Types.NFT;
+    /** NFTMetadata type definition from Types module */
     type NFTMetadata = Types.NFTMetadata;
+    /** ImageUrl type definition from Types module */
     type ImageUrl = Types.ImageUrl;
+    /** Geolocation type definition from Types module */
     type Geolocation = Types.Geolocation;
 
+    /** HashMap storing NFTs by their ID */
     private transient var nfts = HashMap.HashMap<Text, NFT>(0, Text.equal, Text.hash);
+    /** HashMap mapping wallet addresses to their NFT IDs for fast lookup */
     private transient var walletToNFTs = HashMap.HashMap<Text, [Text]>(0, Text.equal, Text.hash);
+    /** Counter for generating unique NFT IDs */
     private transient var lastId: Nat = 0;
 
-    // Create a new NFT
+    /**
+     * Create a new NFT with metadata and ownership tracking
+     * @param channel_user_id - ID of the user creating the NFT
+     * @param wallet - Wallet address of the NFT owner
+     * @param trxId - Transaction ID associated with NFT creation
+     * @param original - Whether this is an original NFT or a copy
+     * @param total_of_this - Total number of copies for this NFT series
+     * @param copy_of - ID of the original NFT if this is a copy (optional)
+     * @param copy_order - Order number of this copy in the series
+     * @param copy_of_original - ID of the original NFT for copy tracking (optional)
+     * @param copy_order_original - Order number in the original series
+     * @param metadata - NFT metadata including name, description, and media
+     * @returns The ID of the created NFT
+     */
     public shared func createNFT(
         channel_user_id: Text,
         wallet: Text,
@@ -63,12 +94,20 @@ persistent actor NFTStorage {
         id
     };
 
-    // Get NFT by ID
+    /**
+     * Get NFT details by ID
+     * @param id - NFT ID to retrieve
+     * @returns NFT details or null if not found
+     */
     public query func getNFT(id: Text) : async ?NFT {
         nfts.get(id)
     };
 
-    // Get NFTs by wallet
+    /**
+     * Get all NFTs owned by a specific wallet
+     * @param wallet - Wallet address to get NFTs for
+     * @returns Array of NFTs owned by the wallet
+     */
     public query func getNFTsByWallet(wallet: Text) : async [NFT] {
         switch (walletToNFTs.get(wallet)) {
             case (null) { [] };
@@ -87,12 +126,20 @@ persistent actor NFTStorage {
         }
     };
 
-    // Get last ID
+    /**
+     * Get the last assigned NFT ID
+     * @returns The last assigned NFT ID
+     */
     public query func getLastId() : async Nat {
         lastId
     };
 
-    // Update NFT metadata
+    /**
+     * Update NFT metadata
+     * @param id - NFT ID to update
+     * @param metadata - New metadata for the NFT
+     * @returns True if update successful, false if NFT not found
+     */
     public shared func updateNFTMetadata(
         id: Text,
         metadata: NFTMetadata
@@ -120,7 +167,10 @@ persistent actor NFTStorage {
         }
     };
 
-    // Get all NFTs
+    /**
+     * Get all NFTs in the system
+     * @returns Array of all NFTs
+     */
     public query func getAllNFTs() : async [NFT] {
         var nftArray: [NFT] = [];
         for ((id, nft) in nfts.entries()) {
@@ -129,7 +179,11 @@ persistent actor NFTStorage {
         nftArray
     };
 
-    // Get NFTs by channel user ID
+    /**
+     * Get all NFTs created by a specific channel user
+     * @param channelUserId - Channel user ID to get NFTs for
+     * @returns Array of NFTs created by the user
+     */
     public query func getNFTsByChannelUserId(channelUserId: Text) : async [NFT] {
         var userNFTs: [NFT] = [];
         for ((id, nft) in nfts.entries()) {
@@ -140,7 +194,10 @@ persistent actor NFTStorage {
         userNFTs
     };
 
-    // Get original NFTs (no copies)
+    /**
+     * Get all original NFTs (excluding copies)
+     * @returns Array of original NFTs
+     */
     public query func getOriginalNFTs() : async [NFT] {
         var originalNFTs: [NFT] = [];
         for ((id, nft) in nfts.entries()) {
@@ -151,7 +208,11 @@ persistent actor NFTStorage {
         originalNFTs
     };
 
-    // Get copies of a specific NFT
+    /**
+     * Get all copies of a specific original NFT
+     * @param originalId - ID of the original NFT
+     * @returns Array of NFT copies
+     */
     public query func getNFTCopies(originalId: Text) : async [NFT] {
         var copies: [NFT] = [];
         for ((id, nft) in nfts.entries()) {
@@ -167,7 +228,11 @@ persistent actor NFTStorage {
         copies
     };
 
-    // Validate NFT metadata
+    /**
+     * Validate NFT metadata for completeness and correctness
+     * @param metadata - NFT metadata to validate
+     * @returns Success result or error message if validation fails
+     */
     public func validateMetadata(metadata: NFTMetadata) : async Result.Result<Bool, Text> {
         // Check if description is not empty
         if (Text.size(metadata.description) == 0) {
@@ -192,7 +257,11 @@ persistent actor NFTStorage {
         #ok(true)
     };
 
-    // Batch create NFTs
+    /**
+     * Create multiple NFTs in a single batch operation
+     * @param nftData - Array of NFT data tuples for batch creation
+     * @returns Array of created NFT IDs or error message if batch fails
+     */
     public shared func batchCreateNFTs(
         nftData: [(Text, Text, Text, Bool, Nat, ?Text, Nat, ?Text, Nat, NFTMetadata)]
     ) : async Result.Result<[Text], Text> {
@@ -243,7 +312,11 @@ persistent actor NFTStorage {
         #ok(Buffer.toArray(results))
     };
 
-    // Batch update NFT metadata
+    /**
+     * Update metadata for multiple NFTs in a single batch operation
+     * @param updates - Array of NFT ID and metadata pairs for batch update
+     * @returns Array of boolean results indicating success for each update
+     */
     public shared func batchUpdateMetadata(
         updates: [(Text, NFTMetadata)]
     ) : async Result.Result<[Bool], Text> {
@@ -282,7 +355,11 @@ persistent actor NFTStorage {
         #ok(Buffer.toArray(results))
     };
 
-    // Get NFT count by wallet
+    /**
+     * Get the number of NFTs owned by a wallet
+     * @param wallet - Wallet address to count NFTs for
+     * @returns Number of NFTs owned by the wallet
+     */
     public query func getNFTCountByWallet(wallet: Text) : async Nat {
         switch (walletToNFTs.get(wallet)) {
             case (null) { 0 };
