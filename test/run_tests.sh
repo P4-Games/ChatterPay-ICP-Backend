@@ -126,7 +126,7 @@ run_tests() {
     # Setup test configuration
     print_status "Setting up test configuration..."
     dfx canister --config-file test/dfx_test.json call main_test_runner setupTestConfig \
-        "(variant{Ok=(\"$USERS_ID\", \"$TRANSACTIONS_ID\", \"$TOKENS_ID\", \"$BLOCKCHAINS_ID\", \"$NFTS_ID\", \"$LAST_PROCESSED_BLOCKS_ID\")})"
+        "(\"$USERS_ID\", \"$TRANSACTIONS_ID\", \"$TOKENS_ID\", \"$BLOCKCHAINS_ID\", \"$NFTS_ID\", \"$LAST_PROCESSED_BLOCKS_ID\")"
     
     # Run all tests
     print_status "Executing comprehensive test suite..."
@@ -142,11 +142,11 @@ run_specific_tests() {
     
     # Setup test configuration if not already set
     dfx canister --config-file test/dfx_test.json call main_test_runner setupTestConfig \
-        "(variant{Ok=(\"$USERS_ID\", \"$TRANSACTIONS_ID\", \"$TOKENS_ID\", \"$BLOCKCHAINS_ID\", \"$NFTS_ID\", \"$LAST_PROCESSED_BLOCKS_ID\")})"
+        "(\"$USERS_ID\", \"$TRANSACTIONS_ID\", \"$TOKENS_ID\", \"$BLOCKCHAINS_ID\", \"$NFTS_ID\", \"$LAST_PROCESSED_BLOCKS_ID\")"
     
     # Run specific tests
     dfx canister --config-file test/dfx_test.json call main_test_runner runSpecificCanisterTests \
-        "(variant{Ok=\"$canister_type\"})"
+        "(\"$canister_type\")"
 }
 
 # Clean up test environment
@@ -164,16 +164,16 @@ show_help() {
     echo "Usage: $0 [OPTIONS] [COMMAND]"
     echo ""
     echo "Commands:"
-    echo "  all                 Run all tests (default)"
-    echo "  users              Run users canister tests only"
-    echo "  transactions       Run transactions canister tests only"
-    echo "  tokens             Run tokens canister tests only"
-    echo "  blockchains        Run blockchains canister tests only"
-    echo "  nfts               Run NFTs canister tests only"
-    echo "  last_processed_blocks Run last processed blocks canister tests only"
-    echo "  deploy             Deploy canisters without running tests"
-    echo "  cleanup            Clean up test environment"
-    echo "  help               Show this help message"
+    echo "  all                    Run all tests (default)"
+    echo "  users                  Run users canister tests only"
+    echo "  transactions           Run transactions canister tests only"
+    echo "  tokens                 Run tokens canister tests only"
+    echo "  blockchains            Run blockchains canister tests only"
+    echo "  nfts                   Run NFTs canister tests only"
+    echo "  last_processed_blocks  Run last processed blocks canister tests only"
+    echo "  deploy                 Deploy canisters without running tests"
+    echo "  cleanup                Clean up test environment"
+    echo "  help                   Show this help message"
     echo ""
     echo "Options:"
     echo "  --local            Use local replica (default)"
@@ -181,10 +181,13 @@ show_help() {
     echo "  --clean            Clean up before running tests"
     echo ""
     echo "Examples:"
-    echo "  $0                 # Run all tests"
-    echo "  $0 users           # Run users tests only"
-    echo "  $0 --clean all     # Clean up and run all tests"
-    echo "  $0 deploy          # Deploy canisters only"
+    echo "  $0                      # Run all tests"
+    echo "  $0 users                # Run users tests only"
+    echo "  $0 transactions         # Run transactions tests only"
+    echo "  $0 tokens               # Run tokens tests only"
+    echo "  $0 nfts                 # Run NFTs tests only"
+    echo "  $0 --clean all          # Clean up and run all tests"
+    echo "  $0 deploy               # Deploy canisters only"
 }
 
 # Main execution

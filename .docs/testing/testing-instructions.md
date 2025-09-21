@@ -14,45 +14,50 @@ This is a comprehensive test suite for all ChatterPay ICP Backend canisters. The
   - Security features (rate limiting, audit logs)
   - Search functionality by phone, wallet, and ID
 
-### 2. Transactions Canister (Planned)
+### 2. Transactions Canister (`transactions_test.mo`)
 - **Functionality**: Multi-chain transaction management
-- **Tests** (To be implemented):
+- **Tests**:
   - Transaction creation and management
   - EVM service integration
-  - Transaction analytics
+  - Transaction analytics and volume calculation
   - Transaction state management
+  - Gas estimation functionality
+  - Address-based transaction retrieval
 
-### 3. Tokens Canister (Planned)
+### 3. Tokens Canister (`tokens_test.mo`)
 - **Functionality**: ERC-20 token management
-- **Tests** (To be implemented):
+- **Tests**:
   - Token CRUD operations
   - Token metadata management
-  - Multi-chain support
-  - Contract address validation
+  - Multi-chain support and chain-specific queries
+  - Contract address validation and lookup
+  - Token update and deletion functionality
 
-### 4. Blockchains Canister (Planned)
+### 4. Blockchains Canister (`blockchains_test.mo`)
 - **Functionality**: Blockchain network configuration
-- **Tests** (To be implemented):
+- **Tests**:
   - Network configuration management
   - Contract address management
-  - Chain ID validation
+  - Chain ID validation and lookup
   - Multiple network support
+  - Configuration updates and deletion
 
-### 5. NFTs Canister (Planned)
+### 5. NFTs Canister (`nfts_test.mo`)
 - **Functionality**: NFT and metadata management
-- **Tests** (To be implemented):
+- **Tests**:
   - NFT creation and management
-  - Metadata handling
+  - Metadata handling and validation
   - Copy and original tracking
-  - Ownership management
+  - Ownership management and wallet-based queries
+  - Batch operations and channel user management
 
-### 6. Last Processed Blocks Canister (Planned)
+### 6. Last Processed Blocks Canister (`last_processed_blocks_test.mo`)
 - **Functionality**: Blockchain synchronization tracking
-- **Tests** (To be implemented):
+- **Tests**:
   - Processed block tracking
   - Network-specific management
-  - Block number updates
-  - Timestamp handling
+  - Block number updates and progression
+  - Timestamp handling and edge cases
 
 ## File Structure
 
@@ -63,14 +68,14 @@ test/
 ├── main_test.mo                       # Main test runner
 ├── test_utils.mo                      # Test utilities and helper functions
 ├── users_test.mo                      # Users canister tests
-├── transactions_test.mo               # Transactions tests (planned)
-├── tokens_test.mo                     # Tokens tests (planned)
-├── blockchains_test.mo                # Blockchains tests (planned)
-├── nfts_test.mo                       # NFTs tests (planned)
-└── last_processed_blocks_test.mo      # Last processed blocks tests (planned)
+├── transactions_test.mo               # Transactions canister tests  
+├── tokens_test.mo                     # Tokens canister tests
+├── blockchains_test.mo                # Blockchains canister tests
+├── nfts_test.mo                       # NFTs canister tests
+└── last_processed_blocks_test.mo      # Last processed blocks canister tests
 ```
 
-**Note**: Currently only `users_test.mo` is implemented. Other test files are planned for future development.
+**Note**: All test files are now fully implemented with comprehensive test coverage for each canister.
 
 ## Installation and Setup
 
@@ -180,16 +185,26 @@ chmod +x test/run_tests.sh
    ```bash
    # Get canister IDs
    USERS_ID=$(dfx canister id users)
+   TRANSACTIONS_ID=$(dfx canister id transactions)
+   TOKENS_ID=$(dfx canister id tokens)
+   BLOCKCHAINS_ID=$(dfx canister id blockchains)
+   NFTS_ID=$(dfx canister id nfts)
+   LAST_PROCESSED_BLOCKS_ID=$(dfx canister id last_processed_blocks)
 
-   # Setup test configuration (currently only supports users canister)
+   # Setup test configuration for all canisters
    dfx canister --config-file test/dfx_test.json call main_test_runner setupTestConfig \
-     "\"$USERS_ID\""
+     "(\"$USERS_ID\", \"$TRANSACTIONS_ID\", \"$TOKENS_ID\", \"$BLOCKCHAINS_ID\", \"$NFTS_ID\", \"$LAST_PROCESSED_BLOCKS_ID\")"
 
-   # Run all implemented tests
+   # Run all canister tests
    dfx canister --config-file test/dfx_test.json call main_test_runner runAllCanisterTests
 
-   # Run only users tests
+   # Run specific canister tests
    dfx canister --config-file test/dfx_test.json call main_test_runner runUsersTests
+   dfx canister --config-file test/dfx_test.json call main_test_runner runTransactionsTests
+   dfx canister --config-file test/dfx_test.json call main_test_runner runTokensTests
+   dfx canister --config-file test/dfx_test.json call main_test_runner runBlockchainsTests
+   dfx canister --config-file test/dfx_test.json call main_test_runner runNFTsTests
+   dfx canister --config-file test/dfx_test.json call main_test_runner runLastProcessedBlocksTests
    ```
 
 ## Test Types
@@ -256,6 +271,48 @@ Test reports include:
 ## Current Test Configuration
 
 The test suite currently uses the following DFX configuration (`test/dfx_test.json`):
+
+```json
+{
+  "canisters": {
+    "main_test_runner": {
+      "main": "test/main_test.mo",
+      "type": "motoko"
+    },
+    "users_test": {
+      "main": "test/users_test.mo",
+      "type": "motoko"
+    },
+    "transactions_test": {
+      "main": "test/transactions_test.mo",
+      "type": "motoko"
+    },
+    "tokens_test": {
+      "main": "test/tokens_test.mo",
+      "type": "motoko"
+    },
+    "blockchains_test": {
+      "main": "test/blockchains_test.mo",
+      "type": "motoko"
+    },
+    "nfts_test": {
+      "main": "test/nfts_test.mo",
+      "type": "motoko"
+    },
+    "last_processed_blocks_test": {
+      "main": "test/last_processed_blocks_test.mo",
+      "type": "motoko"
+    }
+  },
+  "defaults": {
+    "build": {
+      "packtool": "mops sources",
+      "args": ""
+    }
+  },
+  "version": 1
+}
+```
 
 ## Troubleshooting
 
