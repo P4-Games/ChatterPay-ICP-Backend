@@ -53,6 +53,10 @@ jobs:
           done
           echo "✅ Motoko files checked"
 
+      - name: Clean up dfx processes
+        if: always()
+        run: dfx stop || true
+
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -93,6 +97,8 @@ jobs:
 
       - name: Start dfx replica
         run: |
+          # Stop any existing dfx instance first
+          dfx stop || true
           dfx start --background --clean
           # Wait for replica to be ready
           sleep 10
@@ -182,6 +188,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+
+      - name: Install dfx
+        uses: dfinity/setup-dfx@main
+        with:
+          dfx-version: ${{ env.DFX_VERSION }}
 
       - name: Install dependencies
         run: npm install
