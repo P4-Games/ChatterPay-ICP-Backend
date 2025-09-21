@@ -17,12 +17,42 @@ check_requirements() {
     fi
     if ! command -v mops &> /dev/null; then
         echo -e "${YELLOW}Installing mops...${NC}"
-        npm install -g ic-mops
+        # Uninstall any existing mops version first
+        npm uninstall -g ic-mops 2>/dev/null || true
+        # Install specific compatible version
+        npm install -g ic-mops@0.45.1
     fi
     if ! command -v node &> /dev/null; then
         echo -e "${YELLOW}Installing nodejs and npm...${NC}"
         apt-get update && apt-get install -y nodejs npm
     fi
+    if ! command -v dfx &> /dev/null; then
+        echo -e "${YELLOW}Installing dfx SDK...${NC}"
+        sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+        export PATH="$HOME/bin:$PATH"
+        # Verify installation
+        if ! command -v dfx &> /dev/null; then
+            echo -e "${RED}Failed to install dfx. Please install manually.${NC}"
+            exit 1
+        fi
+    fi
+}
+
+# Fix mops compatibility issues
+fix_mops_issues() {
+    echo -e "${YELLOW}Fixing mops compatibility issues...${NC}"
+    
+    # Remove problematic pic-js-mops if it exists
+    npm uninstall -g pic-js-mops 2>/dev/null || true
+    
+    # Reinstall mops with correct version
+    npm uninstall -g ic-mops 2>/dev/null || true
+    npm install -g ic-mops@0.45.1
+    
+    # Clear mops cache
+    rm -rf ~/.mops 2>/dev/null || true
+    
+    echo -e "${GREEN}✓ Mops issues fixed${NC}"
 }
 
 # Initialize project
@@ -35,6 +65,15 @@ init_project() {
     
     echo -e "${YELLOW}Installing dependencies...${NC}"
     npm install --save-dev dotenv
+    
+    # Install azle if not present
+    if ! npm list azle &>/dev/null; then
+        echo -e "${YELLOW}Installing azle...${NC}"
+        npm install azle
+    fi
+
+    # Fix mops issues first
+    fix_mops_issues
 
     # Initialize mops if needed
     if [ ! -f "mops.toml" ]; then
@@ -44,11 +83,14 @@ init_project() {
         mops add array
         mops add hash
         mops add map
+    else
+        echo -e "${YELLOW}Installing mops dependencies...${NC}"
+        mops install
     fi
 
     # Create .env if it doesn't exist
     if [ ! -f ".env" ]; then
-        cp .env.example .env
+        cp env.example .env
     fi
 }
 
@@ -83,8 +125,22 @@ init_project
 source .env
 
 # Check if network parameter is provided
-NETWORK=${1:-$NETWORK}
+NETWORK=${1:-local}
 echo -e "${BLUE}Deploying to network: $NETWORK${NC}"
+
+# Handle dfx replica for local network
+if [ "$NETWORK" = "local" ]; then
+    echo -e "${YELLOW}Setting up local dfx replica...${NC}"
+    # Stop any existing dfx processes
+    dfx stop 2>/dev/null || true
+    # Start dfx with clean state
+    dfx start --clean --background
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Failed to start dfx replica${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✓ dfx replica started${NC}"
+fi
 
 # Function to deploy a canister
 deploy_canister() {
