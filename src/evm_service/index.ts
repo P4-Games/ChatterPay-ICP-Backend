@@ -70,12 +70,12 @@ function getProvider(chainId?: number): JsonRpcProvider {
  * Candid type definitions for ICP canister interface
  */
 
-/** Parameters for token transfer operations */
-const TransferParams = Record({
+/** Parameters for pre-signed transaction operations */
+const SignedTransferParams = Record({
     to: text,
     from: text,
     amount: text,
-    privateKey: text,
+    signedTransaction: text, // Pre-signed transaction hex
     chainId: nat64
 });
 
@@ -334,8 +334,8 @@ export default Canister({
     }),
 
     /**
-     * Call any method on a ChatterPay contract
-     * @param callParams - Parameters including network ID, contract type, method name, params, and private key
+     * Call any method on a ChatterPay contract using pre-signed transaction
+     * @param callParams - Parameters including network ID, contract type, method name, params, and signed transaction
      * @returns Transaction result with hash, status, and gas used
      */
     callContract: update([Record({
@@ -343,7 +343,7 @@ export default Canister({
         contractType: text, // "factory", "implementation", "nft", etc.
         methodName: text,
         params: text, // JSON array of parameters
-        privateKey: text
+        signedTransaction: text // Pre-signed transaction
     })], Result(Record({
         txHash: text,
         status: text,
@@ -367,12 +367,14 @@ export default Canister({
             }
 
             const provider = getProvider(Number(callParams.networkId));
-            const wallet = new Wallet(callParams.privateKey as string, provider);
-            const contract = new ethers.Contract(contractAddress, JSON.parse(abi), wallet);
             
-            const methodParams = JSON.parse(callParams.params as string);
-            const tx = await contract[callParams.methodName as string](...methodParams);
+            // Broadcast the pre-signed transaction
+            const tx = await provider.broadcastTransaction(callParams.signedTransaction as string);
             const receipt = await tx.wait();
+
+            if (!receipt) {
+                return { Err: "Transaction receipt not found" };
+            }
 
             return {
                 Ok: {
@@ -388,11 +390,11 @@ export default Canister({
     }),
 
     /**
-     * Execute a native token transfer on any supported network
-     * @param params - Transfer parameters including to, from, amount, private key, and chain ID
+     * Execute a native token transfer using pre-signed transaction
+     * @param params - Transfer parameters including to, from, amount, signed transaction, and chain ID
      * @returns Transaction result with hash, status, gas used, and effective gas price
      */
-    transfer: update([TransferParams], Result(TransferResult), async (params: any) => {
+    transferSigned: update([SignedTransferParams], Result(TransferResult), async (params: any) => {
         try {
             // Validate inputs
             if (!ethers.isAddress(params.to as string)) {
@@ -400,43 +402,9 @@ export default Canister({
             }
 
             const provider = getProvider(Number(params.chainId));
-            const wallet = new Wallet(params.privateKey as string, provider);
-
-            // Get balance as bigint
-            const balance = await provider.getBalance(wallet.address);
-            const value = ethers.parseEther(params.amount as string);
             
-            if (balance < value) {
-                return { Err: "Insufficient balance" };
-            }
-
-            // Prepare transaction
-            const tx = {
-                to: params.to as string,
-                value,
-                chainId: Number(params.chainId),
-            };
-
-            // Get gas data with retry logic
-            let gasLimit: bigint;
-            let feeData;
-            try {
-                [gasLimit, feeData] = await Promise.all([
-                    provider.estimateGas(tx),
-                    provider.getFeeData()
-                ]);
-            } catch (error: unknown) {
-                const message = error instanceof Error ? error.message : String(error);
-                return { Err: `Gas estimation failed: ${message}` };
-            }
-
-            // Send transaction
-            const transaction: TransactionResponse = await wallet.sendTransaction({
-                ...tx,
-                gasLimit: (gasLimit * BigInt(12)) / BigInt(10), // Add 20% buffer
-                maxFeePerGas: feeData.maxFeePerGas,
-                maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
-            });
+            // Broadcast the pre-signed transaction
+            const transaction = await provider.broadcastTransaction(params.signedTransaction as string);
 
             // Wait for confirmation with timeout
             const receipt = await Promise.race([

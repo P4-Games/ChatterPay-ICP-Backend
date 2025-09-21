@@ -13,7 +13,7 @@
   },
   "type": "module",
   "dependencies": {
-    "azle": "^0.33.0",
+    "azle": "^0.24.1",
     "ethers": "^6.15.0"
   },
   "devDependencies": {

@@ -41,11 +41,11 @@ persistent actor TransactionManager {
 
     /** EVM service actor interface for blockchain interactions */
     type EVMService = actor {
-        transfer: shared ({
+        transferSigned: shared ({
             to: Text;
             from: Text;
             amount: Text;
-            privateKey: Text;
+            signedTransaction: Text; // Pre-signed transaction from client
             chainId: Nat;
         }) -> async {
             #Ok: {
@@ -79,17 +79,17 @@ persistent actor TransactionManager {
     private transient let evmService: EVMService = actor (ENV.getCanisterId("evm_service"));
 
     /**
-     * Execute a multi-chain token transfer transaction
+     * Execute a multi-chain token transfer transaction using pre-signed transaction
      * @param to - Recipient wallet address
      * @param amount - Amount to transfer (in wei or token units)
-     * @param privateKey - Private key for signing the transaction
+     * @param signedTransaction - Pre-signed transaction from client (never expose private keys)
      * @param chainId - Optional chain ID, defaults to Arbitrum Sepolia
      * @returns Transaction result with hash and status, or error message
      */
     public shared(msg) func makeTransfer(
         to: Text,
         amount: Nat,
-        privateKey: Text,
+        signedTransaction: Text,
         chainId: ?Nat
     ) : async Result.Result<Transaction, Text> {
         try {
@@ -107,12 +107,12 @@ persistent actor TransactionManager {
                 case (null) { 421614 }; // Default to Arbitrum Sepolia
             };
 
-            // Execute transfer with EVM service
-            let result = await evmService.transfer({
+            // Execute transfer with EVM service using pre-signed transaction
+            let result = await evmService.transferSigned({
                 to = to;
                 from = caller_text;
                 amount = Nat.toText(amount);
-                privateKey = privateKey;
+                signedTransaction = signedTransaction;
                 chainId = selectedChainId;
             });
 

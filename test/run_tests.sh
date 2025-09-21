@@ -179,6 +179,7 @@ show_help() {
     echo "  --local            Use local replica (default)"
     echo "  --ic               Use Internet Computer mainnet"
     echo "  --clean            Clean up before running tests"
+    echo "  --no-start         Skip starting dfx (assume already running)"
     echo ""
     echo "Examples:"
     echo "  $0                      # Run all tests"
@@ -195,6 +196,7 @@ main() {
     local command="all"
     local use_local=true
     local clean_first=false
+    local skip_start=false
     
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -209,6 +211,10 @@ main() {
                 ;;
             --clean)
                 clean_first=true
+                shift
+                ;;
+            --no-start)
+                skip_start=true
                 shift
                 ;;
             --help|-h)
@@ -231,10 +237,25 @@ main() {
         cleanup
     fi
     
-    # Start local replica if using local
-    if [ "$use_local" = true ]; then
+    # Start local replica if using local and not skipping
+    if [ "$use_local" = true ] && [ "$skip_start" = false ]; then
         print_status "Starting local replica..."
-        dfx start --background
+        # Stop any existing dfx instance first
+        dfx stop 2>/dev/null || true
+        # Wait a moment for cleanup
+        sleep 2
+        # Start fresh replica
+        dfx start --background --clean
+        # Wait for replica to be ready
+        sleep 10
+    elif [ "$skip_start" = true ]; then
+        print_status "Skipping dfx start (assuming already running)..."
+        # Just verify dfx is running
+        if ! dfx ping 2>/dev/null; then
+            print_error "dfx is not running! Either start dfx manually or remove --no-start flag"
+            exit 1
+        fi
+        print_success "dfx is running"
     fi
     
     # Deploy main canisters

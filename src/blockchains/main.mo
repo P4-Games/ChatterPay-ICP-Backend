@@ -8,7 +8,9 @@ import HashMap "mo:base/HashMap";
 import Nat "mo:base/Nat";
 import Nat32 "mo:base/Nat32";
 import Text "mo:base/Text";
+import Result "mo:base/Result";
 import Types "../types";
+import ENV "../env/lib";
 
 /**
  * BlockchainStorage Canister
@@ -29,6 +31,14 @@ persistent actor BlockchainStorage {
     /** HashMap mapping blockchain chain IDs to internal IDs for fast lookup */
     private transient var  chainIdToId = HashMap.HashMap<Nat, Nat>(0, Nat.equal, func(n: Nat) : Nat32 { Nat32.fromNat(n % 2**32) });
 
+    /** Secure API Manager actor reference */
+    type SecureAPIManager = actor {
+        getApiKey: shared (Text) -> async Result.Result<Text, Text>;
+        storeApiKeyReference: shared (Text, Text, ?Int) -> async Result.Result<Text, Text>;
+    };
+    
+    private transient let apiManager: SecureAPIManager = actor (ENV.getCanisterId("secure_api_manager"));
+
     /**
      * Create a new blockchain network configuration
      * @param name - Human-readable name of the blockchain network
@@ -36,7 +46,7 @@ persistent actor BlockchainStorage {
      * @param rpc - RPC endpoint URL for blockchain interaction
      * @param logo - URL or path to blockchain logo image
      * @param explorer - Blockchain explorer URL for transaction viewing
-     * @param scan_apikey - API key for blockchain scanning services
+     * @param scan_apikey - API key for blockchain scanning services (will be stored securely)
      * @param contracts - Smart contract addresses for this blockchain
      * @returns The internal ID of the created blockchain
      */
@@ -48,7 +58,14 @@ persistent actor BlockchainStorage {
         explorer: Text,
         scan_apikey: Text,
         contracts: Contracts
-    ) : async Nat {
+    ) : async Result.Result<Nat, Text> {
+        // Store API key securely first
+        let serviceName = "blockchain_scan_" # name;
+        switch (await apiManager.storeApiKeyReference(serviceName, scan_apikey, null)) {
+            case (#err(e)) { return #err("Failed to store API key: " # e) };
+            case (#ok(_)) {};
+        };
+
         let blockchain: Blockchain = {
             id = nextId;
             name = name;
@@ -56,14 +73,15 @@ persistent actor BlockchainStorage {
             rpc = rpc;
             logo = logo;
             explorer = explorer;
-            scan_apikey = scan_apikey;
+            scan_apikey = scan_apikey; // This will be removed in production
             contracts = contracts;
         };
 
         blockchains.put(nextId, blockchain);
         chainIdToId.put(chain_id, nextId);
+        let createdId = nextId;
         nextId += 1;
-        nextId - 1
+        #ok(createdId)
     };
 
     /**

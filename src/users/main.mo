@@ -121,8 +121,8 @@ persistent actor UserStorage {
      * @param photo - URL or path to user's profile photo (optional)
      * @param wallet - User's blockchain wallet address
      * @param code - User's verification or security code (optional)
-     * @param privateKey - User's private key for blockchain interactions
      * @returns User ID if successful, error message if failed
+     * @note Private keys are NEVER stored in the backend for security
      */
     public shared(msg) func createUser(
         name: ?Text,
@@ -130,8 +130,7 @@ persistent actor UserStorage {
         phone_number: Text,
         photo: ?Text,
         wallet: Text,
-        code: ?Nat,
-        privateKey: Text
+        code: ?Nat
     ) : async Result.Result<Nat, Text> {
         // Check rate limit
         if (not checkRateLimit(msg.caller)) {
@@ -156,7 +155,6 @@ persistent actor UserStorage {
             photo = photo;
             wallet = wallet;
             code = code;
-            privateKey = privateKey;
         };
 
         users.put(nextId, user);
@@ -221,7 +219,6 @@ persistent actor UserStorage {
                     photo = photo;
                     wallet = existingUser.wallet;
                     code = code;
-                    privateKey = existingUser.privateKey;
                 };
                 users.put(id, updatedUser);
                 true

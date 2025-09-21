@@ -26,7 +26,6 @@ module {
         photo: ?Text;
         wallet: Text;
         code: ?Nat;
-        privateKey: Text;
     };
 
     /** Contracts type for smart contract addresses */

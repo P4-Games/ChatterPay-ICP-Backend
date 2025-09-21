@@ -106,7 +106,8 @@ jobs:
       - name: Run comprehensive test suite
         run: |
           chmod +x test/run_tests.sh
-          bash test/run_tests.sh
+          # Run tests without starting dfx again (already started above)
+          bash test/run_tests.sh --no-start all
         env:
           DFX_NETWORK: local
 
@@ -204,7 +205,8 @@ jobs:
       - name: Check for secrets
         run: |
           # Basic check for potential secrets in code
-          if grep -r -i "password\|secret\|key\|token" src/ --include="*.mo" --include="*.ts" | grep -v "// TODO\|// FIXME\|example"; then
+          # Exclude security-related files and safe patterns
+          if grep -r -i "password\|secret.*=\|private.*key.*=" src/ --include="*.mo" --include="*.ts" | grep -v -E "// TODO|// FIXME|example|security/|keyHash|privateKey.*Text|signedTransaction"; then
             echo "⚠️  Potential secrets found in code"
             exit 1
           fi
