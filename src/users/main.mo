@@ -1,7 +1,7 @@
 import Array "mo:base/Array";
-import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
 import Nat "mo:base/Nat";
+import Nat32 "mo:base/Nat32";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
 import Principal "mo:base/Principal";
@@ -9,7 +9,7 @@ import Buffer "mo:base/Buffer";
 import Result "mo:base/Result";
 import Types "../types";
 
-actor UserStorage {
+persistent actor UserStorage {
     type User = Types.User;
 
     // Audit log types
@@ -29,16 +29,16 @@ actor UserStorage {
         lastReset: Int;
     };
 
-    private stable var nextId: Nat = 0;
-    private stable var nextLogId: Nat = 0;
-    private var users = HashMap.HashMap<Nat, User>(0, Nat.equal, Hash.hash);
-    private var phoneToId = HashMap.HashMap<Text, Nat>(0, Text.equal, Text.hash);
-    private var auditLogs = HashMap.HashMap<Nat, AuditLog>(0, Nat.equal, Hash.hash);
-    private var rateLimits = HashMap.HashMap<Text, RateLimit>(0, Text.equal, Text.hash);
+    private var nextId: Nat = 0;
+    private var nextLogId: Nat = 0;
+    private transient var users = HashMap.HashMap<Nat, User>(0, Nat.equal, func(n: Nat) : Nat32 { Nat32.fromNat(n % 2**32) });
+    private transient var phoneToId = HashMap.HashMap<Text, Nat>(0, Text.equal, Text.hash);
+    private transient var auditLogs = HashMap.HashMap<Nat, AuditLog>(0, Nat.equal, func(n: Nat) : Nat32 { Nat32.fromNat(n % 2**32) });
+    private transient var rateLimits = HashMap.HashMap<Text, RateLimit>(0, Text.equal, Text.hash);
 
     // Rate limiting constants
-    private let RATE_LIMIT_WINDOW: Int = 60_000_000_000; // 1 minute in nanoseconds
-    private let MAX_REQUESTS_PER_MINUTE: Nat = 10;
+    private transient let RATE_LIMIT_WINDOW: Int = 60_000_000_000; // 1 minute in nanoseconds
+    private transient let MAX_REQUESTS_PER_MINUTE: Nat = 10;
 
     // Rate limiting check
     private func checkRateLimit(caller: Principal) : Bool {
@@ -101,7 +101,7 @@ actor UserStorage {
 
         // Check if phone number already exists
         switch (phoneToId.get(phone_number)) {
-            case (?existingId) {
+            case (?_existingId) {
                 logAudit(msg.caller, "CREATE_USER", phone_number, false, ?"Phone number already exists");
                 return #err("Phone number already registered");
             };
@@ -243,8 +243,19 @@ actor UserStorage {
                 if (now - limit.lastReset > RATE_LIMIT_WINDOW) {
                     { remaining = MAX_REQUESTS_PER_MINUTE; resetTime = now + RATE_LIMIT_WINDOW }
                 } else {
-                    let remaining = if (limit.count >= MAX_REQUESTS_PER_MINUTE) { 0 } 
-                                  else { MAX_REQUESTS_PER_MINUTE - limit.count };
+                    // Calculate remaining requests safely
+                    let remaining = if (limit.count >= MAX_REQUESTS_PER_MINUTE) { 
+                        0 
+                    } else { 
+                        // Safe calculation using iteration to avoid trap warning
+                        var count = 0;
+                        var remaining = MAX_REQUESTS_PER_MINUTE;
+                        while (count < limit.count) {
+                            remaining -= 1;
+                            count += 1;
+                        };
+                        remaining
+                    };
                     { remaining = remaining; resetTime = limit.lastReset + RATE_LIMIT_WINDOW }
                 }
             };

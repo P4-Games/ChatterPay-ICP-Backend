@@ -1,16 +1,16 @@
 import Array "mo:base/Array";
-import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
 import Nat "mo:base/Nat";
+import Nat32 "mo:base/Nat32";
 import Text "mo:base/Text";
 import Types "../types";
 
-actor TokenStorage {
+persistent actor TokenStorage {
     type Token = Types.Token;
 
-    private stable var nextId: Nat = 0;
-    private var tokens = HashMap.HashMap<Nat, Token>(0, Nat.equal, Hash.hash);
-    private var addressToId = HashMap.HashMap<Text, Nat>(0, Text.equal, Text.hash);
+    private transient var nextId: Nat = 0;
+    private transient var tokens = HashMap.HashMap<Nat, Token>(0, Nat.equal, func(n: Nat) : Nat32 { Nat32.fromNat(n % 2**32) });
+    private transient var addressToId = HashMap.HashMap<Text, Nat>(0, Text.equal, Text.hash);
 
     // Create a new token
     public shared func createToken(

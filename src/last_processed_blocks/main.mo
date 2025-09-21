@@ -1,17 +1,17 @@
 import Array "mo:base/Array";
-import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
 import Nat "mo:base/Nat";
+import Nat32 "mo:base/Nat32";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
 import Types "../types";
 
-actor LastProcessedBlockStorage {
+persistent actor LastProcessedBlockStorage {
     type LastProcessedBlock = Types.LastProcessedBlock;
-
-    private stable var nextId: Nat = 0;
-    private var blocks = HashMap.HashMap<Nat, LastProcessedBlock>(0, Nat.equal, Hash.hash);
-    private var networkToId = HashMap.HashMap<Text, Nat>(0, Text.equal, Text.hash);
+    
+    private transient var nextId: Nat = 0;
+    private transient var blocks = HashMap.HashMap<Nat, LastProcessedBlock>(0, Nat.equal, func(n: Nat) : Nat32 { Nat32.fromNat(n % 2**32) });
+    private transient var networkToId = HashMap.HashMap<Text, Nat>(0, Text.equal, Text.hash);
 
     // Create or update last processed block
     public shared func updateLastProcessedBlock(

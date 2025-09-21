@@ -1,17 +1,17 @@
 import Array "mo:base/Array";
-import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
 import Nat "mo:base/Nat";
+import Nat32 "mo:base/Nat32";
 import Text "mo:base/Text";
 import Types "../types";
 
-actor BlockchainStorage {
+persistent actor BlockchainStorage {
     type Blockchain = Types.Blockchain;
     type Contracts = Types.Contracts;
 
-    private stable var nextId: Nat = 0;
-    private var blockchains = HashMap.HashMap<Nat, Blockchain>(0, Nat.equal, Hash.hash);
-    private var chainIdToId = HashMap.HashMap<Nat, Nat>(0, Nat.equal, Hash.hash);
+    private var nextId: Nat = 0;
+    private transient var blockchains = HashMap.HashMap<Nat, Blockchain>(0, Nat.equal, func(n: Nat) : Nat32 { Nat32.fromNat(n % 2**32) });
+    private transient var  chainIdToId = HashMap.HashMap<Nat, Nat>(0, Nat.equal, func(n: Nat) : Nat32 { Nat32.fromNat(n % 2**32) });
 
     // Create a new blockchain
     public shared func createBlockchain(

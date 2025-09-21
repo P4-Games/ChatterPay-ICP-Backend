@@ -9,7 +9,7 @@ import Buffer "mo:base/Buffer";
 import Error "mo:base/Error";
 import ENV "../env/lib";
 
-actor TransactionManager {
+persistent actor TransactionManager {
     // Adjusted Transaction type to match Mongoose schema fields
     type Transaction = {
         id: Text;
@@ -24,8 +24,8 @@ actor TransactionManager {
     };
 
     // Storage
-    private stable var nextId: Nat = 0;
-    private var transactions = HashMap.HashMap<Text, Transaction>(0, Text.equal, Text.hash);
+    private var nextId: Nat = 0;
+    private transient var transactions = HashMap.HashMap<Text, Transaction>(0, Text.equal, Text.hash);
 
     // EVM service interface
     type EVMService = actor {
@@ -64,7 +64,7 @@ actor TransactionManager {
     };
 
     // Initialize EVM service with canister ID from environment
-    private let evmService: EVMService = actor (ENV.getCanisterId("evm_service"));
+    private transient let evmService: EVMService = actor (ENV.getCanisterId("evm_service"));
 
     // Create and execute transaction with multi-chain support
     public shared(msg) func makeTransfer(

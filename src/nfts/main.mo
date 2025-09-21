@@ -7,15 +7,15 @@ import Buffer "mo:base/Buffer";
 import Result "mo:base/Result";
 import Types "../types";
 
-actor NFTStorage {
+persistent actor NFTStorage {
     type NFT = Types.NFT;
     type NFTMetadata = Types.NFTMetadata;
     type ImageUrl = Types.ImageUrl;
     type Geolocation = Types.Geolocation;
 
-    private var nfts = HashMap.HashMap<Text, NFT>(0, Text.equal, Text.hash);
-    private var walletToNFTs = HashMap.HashMap<Text, [Text]>(0, Text.equal, Text.hash);
-    private var lastId: Nat = 0;
+    private transient var nfts = HashMap.HashMap<Text, NFT>(0, Text.equal, Text.hash);
+    private transient var walletToNFTs = HashMap.HashMap<Text, [Text]>(0, Text.equal, Text.hash);
+    private transient var lastId: Nat = 0;
 
     // Create a new NFT
     public shared func createNFT(
