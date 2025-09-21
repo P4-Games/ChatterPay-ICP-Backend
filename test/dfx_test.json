@@ -1,0 +1,19 @@
+{
+  "canisters": {
+    "main_test_runner": {
+      "main": "test/main_test.mo",
+      "type": "motoko"
+    },
+    "users_test": {
+      "main": "test/users_test.mo",
+      "type": "motoko"
+    }
+  },
+  "defaults": {
+    "build": {
+      "packtool": "mops sources",
+      "args": ""
+    }
+  },
+  "version": 1
+}
