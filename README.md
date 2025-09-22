@@ -27,9 +27,53 @@ This repository contains the Internet Computer backend implementation using Moto
 **Built With**:
 
 - Platform: [Internet Computer](https://internetcomputer.org/)
-- Language: [Motoko](https://internetcomputer.org/docs/current/motoko/main/motoko)
+- Language: [Motoko](https://internetcomputer.org/docs/current/motoko/main/motoko), [TypeScript](https://www.typescriptlang.org/)
 - Development Framework: [DFX](https://internetcomputer.org/docs/current/developer-docs/build/install-upgrade-remove)
 - Interface Description: [Candid](https://internetcomputer.org/docs/current/developer-docs/build/candid/candid-intro)
+
+# Deployments
+
+The ChatterPay backend is deployed on the Internet Computer mainnet with the following canister IDs:
+
+| Service | Canister ID | IC URL |
+|---------|-------------|---------|
+| Analytics Service | `x34wm-pqaaa-aaaan-qz6za-cai` | https://x34wm-pqaaa-aaaan-qz6za-cai.ic0.app |
+| Auth Service | `xo3hb-oyaaa-aaaan-qz62q-cai` | https://xo3hb-oyaaa-aaaan-qz62q-cai.ic0.app |
+| Health Service | `wkwit-xyaaa-aaaan-qz64q-cai` | https://wkwit-xyaaa-aaaan-qz64q-cai.ic0.app |
+| Last Processed Blocks | `weuf3-miaaa-aaaan-qz65q-cai` | https://weuf3-miaaa-aaaan-qz65q-cai.ic0.app |
+| NFTs | `wnxoh-2aaaa-aaaan-qz64a-cai` | https://wnxoh-2aaaa-aaaan-qz64a-cai.ic0.app |
+| Tokens | `nb4jx-xiaaa-aaaah-arjsa-cai` | https://nb4jx-xiaaa-aaaah-arjsa-cai.ic0.app |
+| User Service | `wdvdp-bqaaa-aaaan-qz65a-cai` | https://wdvdp-bqaaa-aaaan-qz65a-cai.ic0.app |
+
+You can interact with each canister using the Candid interface by visiting the IC URLs above.
+
+# Metrics & Analytics
+
+## Project Growth
+![ChatterPay Growth Chart - Accounts](.docs/chatterpay_growth_accounts.png)
+![ChatterPay Growth Chart - Countries](.docs/chatterpay_growth_countries.png)
+ChatterPay has demonstrated significant organic growth since its mainnet launch in May 2024:
+
+- **720+ wallets** created on Scroll mainnet
+- **69 countries**
+- **700+ Discord community members**
+- **200k+ social media impressions**
+- **$0 advertising spend** - 100% organic growth
+- **No new apps installed**
+
+## Real-time Analytics Dashboard
+Track ChatterPay's on-chain metrics and usage statistics:
+- **[Dune Analytics Dashboard](https://dune.com/tomasdm/chatterpay-dashboard)** - Comprehensive on-chain data and transaction analytics
+
+## Project Validation
+The project's success validates market demand for crypto-enabled WhatsApp payments:
+- Started at a Scroll hackathon in 2024 where we won several prizes
+- Hackathon success provided initial funding to reach mainnet
+- Launched mainnet in May 2024
+- Achieved significant user adoption without paid marketing
+- Strong community engagement across multiple platforms
+
+These metrics demonstrate the product-market fit and growing demand for accessible crypto payments through familiar messaging platforms.
 
 # Getting Started
 

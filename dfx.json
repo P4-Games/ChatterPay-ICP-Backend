@@ -22,7 +22,10 @@
     },
     "evm_service": {
       "type": "azle",
-      "main": "src/evm_service/index.ts"
+      "main": "src/evm_service/index.ts",
+      "custom": {
+        "experimental": true
+      }
     },
     "nfts": {
       "main": "src/nfts/main.mo",
@@ -42,23 +45,38 @@
     },
     "nft_service": {
       "type": "azle",
-      "main": "src/nft_service/main.ts"
+      "main": "src/nft_service/main.ts",
+      "custom": {
+        "experimental": true
+      }
     },
     "external_apis": {
       "type": "azle",
-      "main": "src/external_apis/index.ts"
+      "main": "src/external_apis/index.ts",
+      "custom": {
+        "experimental": true
+      }
     },
     "blockchain_service": {
       "type": "azle",
-      "main": "src/blockchain_service/index.ts"
+      "main": "src/blockchain_service/index.ts",
+      "custom": {
+        "experimental": true
+      }
     },
     "analytics_service": {
       "type": "azle",
-      "main": "src/analytics_service/index.ts"
+      "main": "src/analytics_service/index.ts",
+      "custom": {
+        "experimental": true
+      }
     },
     "database_proxy": {
       "type": "azle",
-      "main": "src/database_proxy/index.ts"
+      "main": "src/database_proxy/index.ts",
+      "custom": {
+        "experimental": true
+      }
     }
   },
   "defaults": {

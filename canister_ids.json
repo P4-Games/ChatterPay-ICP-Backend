@@ -1,5 +1,24 @@
 {
-  "blockchains": {
-    "local": "uxrrr-q7777-77774-qaaaq-cai"
+  "analytics_service": {
+    "ic": "x34wm-pqaaa-aaaan-qz6za-cai"
+  },
+  "auth_service": {
+    "ic": "xo3hb-oyaaa-aaaan-qz62q-cai"
+  },
+  "blockchains": {},
+  "health_service": {
+    "ic": "wkwit-xyaaa-aaaan-qz64q-cai"
+  },
+  "last_processed_blocks": {
+    "ic": "weuf3-miaaa-aaaan-qz65q-cai"
+  },
+  "nfts": {
+    "ic": "wnxoh-2aaaa-aaaan-qz64a-cai"
+  },
+  "tokens": {
+    "ic": "nb4jx-xiaaa-aaaah-arjsa-cai"
+  },
+  "user_service": {
+    "ic": "wdvdp-bqaaa-aaaan-qz65a-cai"
   }
 }
