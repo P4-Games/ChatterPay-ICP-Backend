@@ -27,9 +27,25 @@ This repository contains the Internet Computer backend implementation using Moto
 **Built With**:
 
 - Platform: [Internet Computer](https://internetcomputer.org/)
-- Language: [Motoko](https://internetcomputer.org/docs/current/motoko/main/motoko)
+- Language: [Motoko](https://internetcomputer.org/docs/current/motoko/main/motoko), [TypeScript](https://www.typescriptlang.org/)
 - Development Framework: [DFX](https://internetcomputer.org/docs/current/developer-docs/build/install-upgrade-remove)
 - Interface Description: [Candid](https://internetcomputer.org/docs/current/developer-docs/build/candid/candid-intro)
+
+# Deployments
+
+The ChatterPay backend is deployed on the Internet Computer mainnet with the following canister IDs:
+
+| Service | Canister ID | IC URL |
+|---------|-------------|---------|
+| Analytics Service | `x34wm-pqaaa-aaaan-qz6za-cai` | https://x34wm-pqaaa-aaaan-qz6za-cai.ic0.app |
+| Auth Service | `xo3hb-oyaaa-aaaan-qz62q-cai` | https://xo3hb-oyaaa-aaaan-qz62q-cai.ic0.app |
+| Health Service | `wkwit-xyaaa-aaaan-qz64q-cai` | https://wkwit-xyaaa-aaaan-qz64q-cai.ic0.app |
+| Last Processed Blocks | `weuf3-miaaa-aaaan-qz65q-cai` | https://weuf3-miaaa-aaaan-qz65q-cai.ic0.app |
+| NFTs | `wnxoh-2aaaa-aaaan-qz64a-cai` | https://wnxoh-2aaaa-aaaan-qz64a-cai.ic0.app |
+| Tokens | `nb4jx-xiaaa-aaaah-arjsa-cai` | https://nb4jx-xiaaa-aaaah-arjsa-cai.ic0.app |
+| User Service | `wdvdp-bqaaa-aaaan-qz65a-cai` | https://wdvdp-bqaaa-aaaan-qz65a-cai.ic0.app |
+
+You can interact with each canister using the Candid interface by visiting the IC URLs above.
 
 # Getting Started
 
