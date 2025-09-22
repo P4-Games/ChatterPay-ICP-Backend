@@ -47,6 +47,34 @@ The ChatterPay backend is deployed on the Internet Computer mainnet with the fol
 
 You can interact with each canister using the Candid interface by visiting the IC URLs above.
 
+# Metrics & Analytics
+
+## Project Growth
+![ChatterPay Growth Chart - Accounts](.docs/chatterpay_growth_accounts.png)
+![ChatterPay Growth Chart - Countries](.docs/chatterpay_growth_countries.png)
+ChatterPay has demonstrated significant organic growth since its mainnet launch in May 2024:
+
+- **720+ wallets** created on Scroll mainnet
+- **69 countries**
+- **700+ Discord community members**
+- **200k+ social media impressions**
+- **$0 advertising spend** - 100% organic growth
+- **No new apps installed**
+
+## Real-time Analytics Dashboard
+Track ChatterPay's on-chain metrics and usage statistics:
+- **[Dune Analytics Dashboard](https://dune.com/tomasdm/chatterpay-dashboard)** - Comprehensive on-chain data and transaction analytics
+
+## Project Validation
+The project's success validates market demand for crypto-enabled WhatsApp payments:
+- Started at a Scroll hackathon in 2024 where we won several prizes
+- Hackathon success provided initial funding to reach mainnet
+- Launched mainnet in May 2024
+- Achieved significant user adoption without paid marketing
+- Strong community engagement across multiple platforms
+
+These metrics demonstrate the product-market fit and growing demand for accessible crypto payments through familiar messaging platforms.
+
 # Getting Started
 
 **1. Install Requirements**:
