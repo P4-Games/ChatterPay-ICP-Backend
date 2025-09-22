@@ -69,7 +69,7 @@ Track ChatterPay's on-chain metrics and usage statistics:
 The project's success validates market demand for crypto-enabled WhatsApp payments:
 - Started at a Scroll hackathon in 2024 where we won several prizes
 - Hackathon success provided initial funding to reach mainnet
-- Launched mainnet in May 2024
+- Launched mainnet in May 2025
 - Achieved significant user adoption without paid marketing
 - Strong community engagement across multiple platforms
 
