@@ -6,9 +6,7 @@
 import Debug "mo:base/Debug";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
-import Buffer "mo:base/Buffer";
 import Nat "mo:base/Nat";
-import TestUtils "./test_utils";
 
 /**
  * NFT Service Test Module
