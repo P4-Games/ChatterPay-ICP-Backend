@@ -1,5 +1,14 @@
 {
+  "analytics_service": {
+    "ic": "x34wm-pqaaa-aaaan-qz6za-cai"
+  },
   "blockchains": {
     "local": "uxrrr-q7777-77774-qaaaq-cai"
+  },
+  "transactions": {
+    "ic": "x45qy-ciaaa-aaaan-qz6zq-cai"
+  },
+  "users": {
+    "ic": "xj2bv-daaaa-aaaan-qz62a-cai"
   }
 }

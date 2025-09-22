@@ -17,7 +17,8 @@ import {
     Vec,
     CandidType,
     float64,
-    Opt
+    Opt,
+    Result
 } from 'azle/experimental';
 
 /**
@@ -64,7 +65,7 @@ const NotificationData = Record({
     userId: text,
     title: text,
     body: text,
-    type: text, // transaction, security, promotion, etc.
+    notificationType: text, // transaction, security, promotion, etc.
     data: text, // JSON string with additional data
     read: bool,
     createdAt: nat64,
@@ -76,7 +77,7 @@ const PushNotificationRequest = Record({
     userIds: Vec(text),
     title: text,
     body: text,
-    type: text,
+    notificationType: text,
     data: text,
     scheduleAt: Opt(nat64) // For scheduled notifications
 });
@@ -91,11 +92,13 @@ const AnalyticsQuery = Record({
     limit: Opt(nat64)
 });
 
-/** Generic Result type for operations that can succeed or fail */
-const Result = <T extends CandidType>(type: T) => Variant({
-    Ok: type,
-    Err: text
-});
+/** Result types for operations that can succeed or fail */
+const BoolResult = Result(bool, text);
+const TextResult = Result(text, text);
+const UserAnalyticsResult = Result(UserAnalytics, text);
+const PlatformAnalyticsResult = Result(PlatformAnalytics, text);
+const AnalyticsEventResult = Result(Vec(AnalyticsEvent), text);
+const NotificationDataResult = Result(Vec(NotificationData), text);
 
 /**
  * State Management
@@ -159,7 +162,7 @@ export default Canister({
      * Can only be called once when OWNER is null
      * @returns The owner principal ID or error message
      */
-    initializeOwner: update([], Result(text), () => {
+    initializeOwner: update([], TextResult, () => {
         if (OWNER !== null) {
             return { Err: "Owner already initialized" };
         }
@@ -180,7 +183,7 @@ export default Canister({
      * @param environment - Environment (staging/prod)
      * @returns Success boolean or error message
      */
-    updatePushConfig: update([text, text, text], Result(bool), (apiKey: string, channelAddress: string, environment: string) => {
+    updatePushConfig: update([text, text, text], BoolResult, (apiKey: string, channelAddress: string, environment: string) => {
         if (OWNER === null) {
             return { Err: "Owner not initialized" };
         }
@@ -202,7 +205,7 @@ export default Canister({
      * @param event - Analytics event data
      * @returns Success boolean or error
      */
-    trackEvent: update([AnalyticsEvent], Result(bool), (event: any) => {
+    trackEvent: update([AnalyticsEvent], BoolResult, (event: any) => {
         try {
             const eventId = event.id || generateId();
             const eventData = {
@@ -236,7 +239,7 @@ export default Canister({
      * @param query - Query parameters
      * @returns Matching events or error
      */
-    queryEvents: update([AnalyticsQuery], Result(Vec(AnalyticsEvent)), (query: any) => {
+    queryEvents: update([AnalyticsQuery], AnalyticsEventResult, (query: any) => {
         try {
             const events = Array.from(analyticsEvents.values());
             let filteredEvents = events;
@@ -274,7 +277,7 @@ export default Canister({
      * @param userId - User ID
      * @returns User analytics or error
      */
-    getUserAnalytics: update([text], Result(UserAnalytics), (userId: string) => {
+    getUserAnalytics: update([text], UserAnalyticsResult, (userId: string) => {
         try {
             const cacheKey = `user_analytics_${userId}`;
             const cached = analyticsCache.get(cacheKey);
@@ -352,7 +355,7 @@ export default Canister({
      * Get platform analytics
      * @returns Platform analytics or error
      */
-    getPlatformAnalytics: update([], Result(PlatformAnalytics), () => {
+    getPlatformAnalytics: update([], PlatformAnalyticsResult, () => {
         try {
             const cacheKey = "platform_analytics";
             const cached = analyticsCache.get(cacheKey);
@@ -417,7 +420,7 @@ export default Canister({
      * @param notification - Notification data
      * @returns Success boolean or error
      */
-    createNotification: update([NotificationData], Result(text), (notification: any) => {
+    createNotification: update([NotificationData], TextResult, (notification: any) => {
         try {
             const notificationId = notification.id || generateId();
             const notificationData = {
@@ -425,7 +428,7 @@ export default Canister({
                 userId: notification.userId,
                 title: notification.title,
                 body: notification.body,
-                type: notification.type,
+                notificationType: notification.notificationType,
                 data: notification.data,
                 read: false,
                 createdAt: BigInt(Date.now()),
@@ -450,7 +453,7 @@ export default Canister({
      * @param unreadOnly - Return only unread notifications
      * @returns User notifications or error
      */
-    getUserNotifications: query([text, bool], Result(Vec(NotificationData)), (userId: string, unreadOnly: boolean) => {
+    getUserNotifications: query([text, bool], NotificationDataResult, (userId: string, unreadOnly: boolean) => {
         try {
             const userNotifs = userNotifications.get(userId) || [];
             let filteredNotifs = userNotifs;
@@ -481,7 +484,7 @@ export default Canister({
      * @param notificationId - Notification ID
      * @returns Success boolean or error
      */
-    markNotificationRead: update([text, text], Result(bool), (userId: string, notificationId: string) => {
+    markNotificationRead: update([text, text], BoolResult, (userId: string, notificationId: string) => {
         try {
             const userNotifs = userNotifications.get(userId) || [];
             const notification = userNotifs.find(n => n.id === notificationId);
@@ -505,7 +508,7 @@ export default Canister({
      * @param request - Push notification request
      * @returns Success boolean or error
      */
-    sendPushNotification: update([PushNotificationRequest], Result(bool), async (request: any) => {
+    sendPushNotification: update([PushNotificationRequest], BoolResult, async (request: any) => {
         try {
             if (!pushConfig.apiKey) {
                 return { Err: "Push Protocol not configured" };
@@ -529,7 +532,7 @@ export default Canister({
                     userId,
                     title: request.title,
                     body: request.body,
-                    type: request.type,
+                    notificationType: request.notificationType,
                     data: request.data,
                     read: false,
                     createdAt: BigInt(Date.now()),
@@ -552,7 +555,7 @@ export default Canister({
      * Clear analytics cache (owner only)
      * @returns Success boolean or error
      */
-    clearCache: update([], Result(bool), () => {
+    clearCache: update([], BoolResult, () => {
         if (OWNER === null) {
             return { Err: "Owner not initialized" };
         }
