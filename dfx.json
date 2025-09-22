@@ -21,16 +21,44 @@
       "type": "motoko"
     },
     "evm_service": {
-      "type": "custom",
-      "build": "npx azle",
-      "root": "src/evm_service",
-      "ts": "src/evm_service/index.ts",
-      "candid": "src/evm_service/index.did",
-      "wasm": ".azle/evm_service/evm_service.wasm.gz"
+      "type": "azle",
+      "main": "src/evm_service/index.ts"
     },
     "nfts": {
       "main": "src/nfts/main.mo",
       "type": "motoko"
+    },
+    "health_service": {
+      "main": "src/health_service/main.mo",
+      "type": "motoko"
+    },
+    "auth_service": {
+      "main": "src/auth_service/main.mo",
+      "type": "motoko"
+    },
+    "user_service": {
+      "main": "src/user_service/main.mo",
+      "type": "motoko"
+    },
+    "nft_service": {
+      "type": "azle",
+      "main": "src/nft_service/main.ts"
+    },
+    "external_apis": {
+      "type": "azle",
+      "main": "src/external_apis/index.ts"
+    },
+    "blockchain_service": {
+      "type": "azle",
+      "main": "src/blockchain_service/index.ts"
+    },
+    "analytics_service": {
+      "type": "azle",
+      "main": "src/analytics_service/index.ts"
+    },
+    "database_proxy": {
+      "type": "azle",
+      "main": "src/database_proxy/index.ts"
     }
   },
   "defaults": {

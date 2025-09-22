@@ -144,7 +144,6 @@ module {
             photo = ?"https://test-image.example.com/image.jpg";
             wallet = "0x1234567890123456789012345678901234567890";
             code = ?123456;
-            privateKey = "test_private_key_123";
         }
     };
 
