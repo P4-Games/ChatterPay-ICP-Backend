@@ -39,17 +39,6 @@
       "main": "src/auth_service/main.mo",
       "type": "motoko"
     },
-    "user_service": {
-      "main": "src/user_service/main.mo",
-      "type": "motoko"
-    },
-    "nft_service": {
-      "type": "azle",
-      "main": "src/nft_service/main.ts",
-      "custom": {
-        "experimental": true
-      }
-    },
     "external_apis": {
       "type": "azle",
       "main": "src/external_apis/index.ts",
