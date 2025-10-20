@@ -41,9 +41,8 @@ The ChatterPay backend is deployed on the Internet Computer mainnet with the fol
 | Auth Service | `xo3hb-oyaaa-aaaan-qz62q-cai` | https://xo3hb-oyaaa-aaaan-qz62q-cai.ic0.app |
 | Health Service | `wkwit-xyaaa-aaaan-qz64q-cai` | https://wkwit-xyaaa-aaaan-qz64q-cai.ic0.app |
 | Last Processed Blocks | `weuf3-miaaa-aaaan-qz65q-cai` | https://weuf3-miaaa-aaaan-qz65q-cai.ic0.app |
-| NFTs | `wnxoh-2aaaa-aaaan-qz64a-cai` | https://wnxoh-2aaaa-aaaan-qz64a-cai.ic0.app |
+| NFTs Storage | `wnxoh-2aaaa-aaaan-qz64a-cai` | https://wnxoh-2aaaa-aaaan-qz64a-cai.ic0.app |
 | Tokens | `nb4jx-xiaaa-aaaah-arjsa-cai` | https://nb4jx-xiaaa-aaaah-arjsa-cai.ic0.app |
-| User Service | `wdvdp-bqaaa-aaaan-qz65a-cai` | https://wdvdp-bqaaa-aaaan-qz65a-cai.ic0.app |
 
 You can interact with each canister using the Candid interface by visiting the IC URLs above.
 
@@ -130,7 +129,34 @@ The backend will be available at the provided canister URLs.
 
 ![ICP Architecture](.docs/icp_architecture.jpeg)
 
-The ChatterPay ICP Backend follows a microservices architecture using Internet Computer canisters, providing scalable and secure blockchain infrastructure for the WhatsApp wallet application.
+The ChatterPay ICP Backend follows a **unified two-tier microservices architecture**:
+
+## Two-Tier Architecture Pattern
+
+### Storage Layer (Motoko)
+Core data persistence and CRUD operations with native ICP optimization:
+- `users` - User profiles, authentication, rate limiting, audit logs
+- `transactions` - Transaction records with multi-chain support
+- `nfts` - NFT storage and ownership tracking
+- `tokens` - Token metadata and configurations
+- `blockchains` - Blockchain network configurations
+- `last_processed_blocks` - Block synchronization tracking
+
+### Service Layer (Azle/TypeScript)
+Business logic, external integrations, and advanced features:
+- `evm_service` - EVM blockchain interactions and multi-chain operations
+- `analytics_service` - Analytics, metrics, and user insights
+- `auth_service` - Authentication and JWT token management
+- `health_service` - System health monitoring
+- `external_apis` - Third-party API integrations
+- `blockchain_service` - Multi-chain operations coordinator
+- `database_proxy` - Database proxy and caching layer
+
+This separation provides:
+- ✅ **Clear separation of concerns** - Storage vs. business logic
+- ✅ **Technology optimization** - Motoko for storage, TypeScript for complex logic
+- ✅ **Scalability** - Independent canister scaling
+- ✅ **Maintainability** - Easier to update and test individual layers
 
 # Example ideal flows:
 These would be the account creation and transfer flows we want to achieve in ICP, which allow us to minimize trust without leaving the WhatsApp interface.
@@ -143,47 +169,81 @@ These would be the account creation and transfer flows we want to achieve in ICP
 
 # Canisters Overview
 
-The backend is composed of several specialized canisters:
+The backend follows a unified two-tier architecture with clear separation between storage and service layers:
 
-1. **TransactionManager**:
-   - Manages transaction records with multi-chain support
-   - Tracks transaction status and history
-   - Provides advanced analytics and querying capabilities
-   - **New Features**: Transaction analytics, volume tracking, gas estimation
-   - Supports Arbitrum, Polygon, BSC, and Ethereum networks
+## Storage Layer Canisters (Motoko)
 
-2. **UserStorage**:
-   - Handles user profiles and authentication
-   - Manages wallet associations and phone number mapping
-   - **Security Features**: Rate limiting (10 req/min), audit logging, security metrics
-   - **New Features**: Enhanced validation, duplicate prevention, audit trails
+1. **users** - UserStorage:
+   - User profiles and authentication data
+   - Wallet associations and phone number mapping
+   - **Security**: Rate limiting (10 req/min), audit logging, security metrics
+   - **Features**: Enhanced validation, duplicate prevention, audit trails
 
-3. **NFTStorage**:
-   - Handles NFT minting and management with batch operations
-   - Stores and validates NFT metadata
-   - Manages NFT ownership and transfers
-   - **New Features**: Batch creation/updates, metadata validation, enhanced querying
+2. **transactions** - TransactionManager:
+   - Transaction records with multi-chain support
+   - Transaction status tracking and history
+   - Advanced analytics and querying capabilities
+   - **Features**: Transaction analytics, volume tracking, gas estimation
+   - Supports Arbitrum, Polygon, BSC, Ethereum, and Scroll networks
 
-4. **EVMService**:
-   - EVM blockchain integration service
-   - Multi-chain transaction execution
-   - **New Features**: Multi-chain support, gas estimation, chain management
-   - Supports multiple networks with automatic provider management
+3. **nfts** - NFTStorage:
+   - NFT minting and management with batch operations
+   - NFT metadata storage and validation
+   - Ownership and transfer tracking
+   - **Features**: Batch creation/updates, metadata validation, enhanced querying
 
-5. **BlockchainStorage**:
-   - Stores blockchain configurations
-   - Manages smart contract addresses
-   - Handles network-specific settings
-
-6. **TokenStorage**:
-   - Manages token information
-   - Tracks token metadata
+4. **tokens** - TokenStorage:
+   - Token information and metadata
    - Chain-specific token configurations
+   - Token balance tracking
 
-7. **LastProcessedBlockStorage**:
-   - Tracks blockchain synchronization
-   - Manages processing checkpoints
+5. **blockchains** - BlockchainStorage:
+   - Blockchain network configurations
+   - Smart contract addresses
+   - Network-specific settings
+
+6. **last_processed_blocks** - LastProcessedBlockStorage:
+   - Blockchain synchronization state
+   - Processing checkpoints
    - Network-specific block tracking
+
+## Service Layer Canisters (Azle/TypeScript)
+
+7. **evm_service** - EVMService:
+   - EVM blockchain integration
+   - Multi-chain transaction execution
+   - Gas estimation and chain management
+   - Automatic provider management
+
+8. **analytics_service** - AnalyticsService:
+   - User analytics and metrics
+   - Platform statistics
+   - Event tracking and insights
+
+9. **auth_service** - AuthService:
+   - JWT token generation and validation
+   - Session management
+   - Authentication flows
+
+10. **health_service** - HealthService:
+    - System health monitoring
+    - Canister status checks
+    - Performance metrics
+
+11. **external_apis** - ExternalAPIs:
+    - Third-party API integrations
+    - External service connections
+    - API rate limiting and caching
+
+12. **blockchain_service** - BlockchainService:
+    - Multi-chain operations coordinator
+    - Cross-chain transaction routing
+    - Network management
+
+13. **database_proxy** - DatabaseProxy:
+    - Database proxy layer
+    - Query optimization
+    - Caching mechanisms
 
 # API Documentation
 
