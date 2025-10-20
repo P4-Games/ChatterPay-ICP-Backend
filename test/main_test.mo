@@ -14,7 +14,6 @@ import TransactionsTest "./transactions_test";
 import TokensTest "./tokens_test";
 import BlockchainsTest "./blockchains_test";
 import NFTsTest "./nfts_test";
-import NFTServiceTest "./nft_service_test";
 import LastProcessedBlocksTest "./last_processed_blocks_test";
 
 /**
@@ -29,7 +28,6 @@ actor MainTestRunner {
     private var tokensCanisterId: ?Text = null;
     private var blockchainsCanisterId: ?Text = null;
     private var nftsCanisterId: ?Text = null;
-    private var nftServiceCanisterId: ?Text = null;
     private var lastProcessedBlocksCanisterId: ?Text = null;
 
     /**
@@ -41,7 +39,6 @@ actor MainTestRunner {
         tokensId: Text,
         blockchainsId: Text,
         nftsId: Text,
-        nftServiceId: Text,
         lastProcessedBlocksId: Text
     ): async () {
         usersCanisterId := ?usersId;
@@ -49,7 +46,6 @@ actor MainTestRunner {
         tokensCanisterId := ?tokensId;
         blockchainsCanisterId := ?blockchainsId;
         nftsCanisterId := ?nftsId;
-        nftServiceCanisterId := ?nftServiceId;
         lastProcessedBlocksCanisterId := ?lastProcessedBlocksId;
         Debug.print("✅ Test configuration set up successfully for all canisters");
     };
@@ -127,22 +123,6 @@ actor MainTestRunner {
                     duration = 0;
                 };
                 buffer.add(nftsResult);
-                
-                // Run NFT Service tests (TypeScript)
-                let nftServiceTests = NFTServiceTest.runAllTests();
-                var nftServicePassed = true;
-                for (result in nftServiceTests.vals()) {
-                    if (not result.success) {
-                        nftServicePassed := false;
-                    };
-                };
-                let nftServiceResult: TestUtils.TestResult = {
-                    name = "NFT Service Tests (TypeScript)";
-                    passed = nftServicePassed;
-                    error = if (nftServicePassed) null else ?"Some NFT service tests failed";
-                    duration = 0;
-                };
-                buffer.add(nftServiceResult);
                 
                 // Run last processed blocks tests
                 let lastProcessedBlocksTest = LastProcessedBlocksTest.LastProcessedBlocksTest();
@@ -289,35 +269,6 @@ actor MainTestRunner {
     };
 
     /**
-     * Run NFT Service tests specifically (TypeScript)
-     */
-    public shared func runNFTServiceTests(): async Text {
-        Debug.print("🧪 Running NFT Service Tests (TypeScript)...\n");
-        let results = NFTServiceTest.runAllTests();
-        
-        var report = "NFT Service Test Results:\n";
-        report #= "-" # Text.repeat("-", 40) # "\n";
-        
-        var passed = 0;
-        var failed = 0;
-        
-        for (result in results.vals()) {
-            let status = if (result.success) "✅ PASS" else "❌ FAIL";
-            report #= status # " | " # result.name # "\n";
-            if (not result.success) {
-                report #= "    ⚠️  " # result.message # "\n";
-                failed += 1;
-            } else {
-                passed += 1;
-            };
-        };
-        
-        report #= "\nSummary: " # Nat.toText(passed) # " passed, " # Nat.toText(failed) # " failed\n";
-        Debug.print(report);
-        report
-    };
-
-    /**
      * Run last processed blocks tests specifically
      */
     public shared func runLastProcessedBlocksTests(): async Text {
@@ -342,9 +293,8 @@ actor MainTestRunner {
             case ("tokens") { await runTokensTests() };
             case ("blockchains") { await runBlockchainsTests() };
             case ("nfts") { await runNFTsTests() };
-            case ("nft_service") { await runNFTServiceTests() };
             case ("last_processed_blocks") { await runLastProcessedBlocksTests() };
-            case (_) { "❌ Unknown canister name: " # canisterName # ". Available: users, transactions, tokens, blockchains, nfts, nft_service, last_processed_blocks" };
+            case (_) { "❌ Unknown canister name: " # canisterName # ". Available: users, transactions, tokens, blockchains, nfts, last_processed_blocks" };
         }
     };
 
